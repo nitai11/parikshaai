@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Question, UserAnswer, QuizResult } from '@/types/quiz';
-import { Clock, X, CheckCircle2, XCircle, Lightbulb, ArrowRight, Volume2, VolumeX } from 'lucide-react';
+import { Clock, X, CheckCircle2, XCircle, Lightbulb, ArrowRight, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 
 interface QuizPlayerProps {
   topic: string;
@@ -146,12 +146,20 @@ export default function QuizPlayer({
       {/* Top Header */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
-            <span className="text-emerald-600">Pariksha</span>AI
+          <button
+            onClick={onExit}
+            className="flex items-center gap-1.5 text-xs font-bold text-gray-700 hover:text-gray-900 bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-2xs hover:bg-gray-100 transition"
+            title="क्विज़ से बाहर जाएं"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>वापस (Back)</span>
+          </button>
+          <div className="flex items-center gap-1 font-bold text-gray-900 text-sm">
+            <span className="text-emerald-600 font-black">Pariksha</span>AI
           </div>
           <button
             onClick={onExit}
-            className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-200/60 px-2.5 py-1 rounded-full transition"
+            className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full transition"
           >
             <span>Exit</span>
             <X className="w-3.5 h-3.5" />

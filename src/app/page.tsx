@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import HomeScreen from '@/components/HomeScreen';
 import QuizPlayer from '@/components/QuizPlayer';
@@ -95,95 +95,8 @@ export default function App() {
     }
   };
 
-  // 🛡️ Mobile / Browser Back Button Interception
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Push initial history entry so pressing back triggers popstate instead of exiting
-    window.history.pushState({ page: 'pariksha_active' }, '');
-
-    const handlePopState = () => {
-      // 1. If any modal is open, close that modal first
-      if (isExitDialogOpen) {
-        setIsExitDialogOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isExitQuizDialogOpen) {
-        setIsExitQuizDialogOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isFeedbackOpen) {
-        setIsFeedbackOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isAuthOpen) {
-        setIsAuthOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isLiveTestOpen) {
-        setIsLiveTestOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isProfileOpen) {
-        setIsProfileOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isLegalOpen) {
-        setIsLegalOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isMistakesOpen) {
-        setIsMistakesOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isProOpen) {
-        setIsProOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isBattleOpen) {
-        setIsBattleOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-      if (isUploadOpen) {
-        setIsUploadOpen(false);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-
-      // 2. If user is inside active Quiz, confirm before quitting
-      if (screen === 'quiz') {
-        setIsExitQuizDialogOpen(true);
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-
-      // 3. If in Scorecard, return safely to home screen
-      if (screen === 'scorecard') {
-        setScreen('home');
-        window.history.pushState({ page: 'pariksha_active' }, '');
-        return;
-      }
-
-      // 4. On Home screen with no modal open, show confirmation dialog: "Do you want to close?"
-      setIsExitDialogOpen(true);
-      window.history.pushState({ page: 'pariksha_active' }, '');
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [
+  // 🛡️ Mobile / Browser Back Button Interception with Ref
+  const stateRef = useRef({
     isExitDialogOpen,
     isExitQuizDialogOpen,
     isFeedbackOpen,
@@ -196,7 +109,104 @@ export default function App() {
     isBattleOpen,
     isUploadOpen,
     screen
-  ]);
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      isExitDialogOpen,
+      isExitQuizDialogOpen,
+      isFeedbackOpen,
+      isAuthOpen,
+      isLiveTestOpen,
+      isProfileOpen,
+      isLegalOpen,
+      isMistakesOpen,
+      isProOpen,
+      isBattleOpen,
+      isUploadOpen,
+      screen
+    };
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Push exactly once on initial load
+    window.history.pushState({ page: 'pariksha_base' }, '');
+
+    const handlePopState = () => {
+      const cur = stateRef.current;
+
+      // Always re-arm the history state so subsequent back presses are also caught
+      window.history.pushState({ page: 'pariksha_base' }, '');
+
+      // 1. If any modal is open, close that modal
+      if (cur.isExitDialogOpen) {
+        setIsExitDialogOpen(false);
+        return;
+      }
+      if (cur.isExitQuizDialogOpen) {
+        setIsExitQuizDialogOpen(false);
+        return;
+      }
+      if (cur.isFeedbackOpen) {
+        setIsFeedbackOpen(false);
+        return;
+      }
+      if (cur.isAuthOpen) {
+        setIsAuthOpen(false);
+        return;
+      }
+      if (cur.isLiveTestOpen) {
+        setIsLiveTestOpen(false);
+        return;
+      }
+      if (cur.isProfileOpen) {
+        setIsProfileOpen(false);
+        return;
+      }
+      if (cur.isLegalOpen) {
+        setIsLegalOpen(false);
+        return;
+      }
+      if (cur.isMistakesOpen) {
+        setIsMistakesOpen(false);
+        return;
+      }
+      if (cur.isProOpen) {
+        setIsProOpen(false);
+        return;
+      }
+      if (cur.isBattleOpen) {
+        setIsBattleOpen(false);
+        return;
+      }
+      if (cur.isUploadOpen) {
+        setIsUploadOpen(false);
+        return;
+      }
+
+      // 2. If user is in Quiz, ask if they want to exit quiz
+      if (cur.screen === 'quiz') {
+        setIsExitQuizDialogOpen(true);
+        return;
+      }
+
+      // 3. If in Scorecard, return safely to home screen
+      if (cur.screen === 'scorecard') {
+        setScreen('home');
+        return;
+      }
+
+      // 4. On Home screen with no modal open, show confirmation dialog: "Do you want to close?"
+      setIsExitDialogOpen(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // Active Quiz State
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);

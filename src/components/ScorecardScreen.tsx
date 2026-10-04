@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { QuizResult } from '@/types/quiz';
-import { Trophy, Flame, Clock, Target, AlertTriangle, Share2, RotateCcw, Home } from 'lucide-react';
+import { Trophy, Flame, Clock, Target, AlertTriangle, Share2, RotateCcw, Home, ArrowLeft } from 'lucide-react';
 
 interface ScorecardScreenProps {
   result: QuizResult;
@@ -39,8 +39,22 @@ export default function ScorecardScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 max-w-md mx-auto px-4 py-6 flex flex-col justify-between">
+    <div className="min-h-screen bg-gray-50 max-w-md mx-auto px-4 py-4 flex flex-col justify-between">
       <div>
+        {/* Top Back Navigation Bar */}
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={onGoHome}
+            className="flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-2xs hover:bg-gray-100 transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>होम स्क्रीन (Home)</span>
+          </button>
+          <div className="text-xs font-bold text-gray-400">
+            Pariksha<span className="text-emerald-600">AI</span>
+          </div>
+        </div>
+
         {/* Celebration Header */}
         <div className="text-center mb-4">
           <div className="w-14 h-14 mx-auto mb-2 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shadow-md shadow-amber-500/20">
