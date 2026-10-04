@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, X, Flame, Target, Trophy, Award, Crown, Check, BookOpen, Share2, MessageCircle } from 'lucide-react';
+import { User, X, Flame, Target, Trophy, Crown, Check, BookOpen, MessageCircle, LogOut, LogIn } from 'lucide-react';
+import { UserProfile } from '@/types/auth';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -10,6 +11,10 @@ interface ProfileModalProps {
   isPro: boolean;
   onOpenPro: () => void;
   onOpenMistakes: () => void;
+  currentUser: UserProfile | null;
+  onOpenAuth: () => void;
+  onLogout: () => void;
+  onUpdateTargetExam?: (exam: string) => void;
 }
 
 const EXAM_GOALS = [
@@ -27,13 +32,25 @@ export default function ProfileModal({
   streakDays,
   isPro,
   onOpenPro,
-  onOpenMistakes
+  onOpenMistakes,
+  currentUser,
+  onOpenAuth,
+  onLogout,
+  onUpdateTargetExam
 }: ProfileModalProps) {
-  const [userName, setUserName] = useState('Rahul Saini');
-  const [targetExam, setTargetExam] = useState('SSC CGL / CHSL');
-  const [isEditingName, setIsEditingName] = useState(false);
+  const [targetExam, setTargetExam] = useState(currentUser?.targetExam || 'SSC CGL / CHSL');
 
   if (!isOpen) return null;
+
+  const displayName = currentUser?.name || 'गेस्ट विद्यार्थी (Guest)';
+  const displayContact = currentUser?.email || currentUser?.phone || 'लॉगिन नहीं है';
+
+  const handleSelectExam = (exam: string) => {
+    setTargetExam(exam);
+    if (onUpdateTargetExam) {
+      onUpdateTargetExam(exam);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/65 backdrop-blur-xs p-0 sm:p-4">
@@ -57,40 +74,36 @@ export default function ProfileModal({
           </button>
         </div>
 
+        {/* Not Logged In Banner */}
+        {!currentUser && (
+          <div className="my-3 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between">
+            <div>
+              <div className="font-bold text-xs text-amber-900">आप गेस्ट मोड में हैं</div>
+              <div className="text-[11px] text-amber-700">अपनी स्ट्रीक और स्कोर सुरक्षित रखें</div>
+            </div>
+            <button
+              onClick={() => {
+                onClose();
+                onOpenAuth();
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1 transition"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>लॉगिन करें</span>
+            </button>
+          </div>
+        )}
+
         {/* User Card */}
-        <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/70 rounded-2xl my-4 flex items-center justify-between">
+        <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/70 rounded-2xl my-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-emerald-600 to-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-md">
-              {userName.charAt(0).toUpperCase()}
+              {displayName.charAt(0).toUpperCase()}
             </div>
             <div>
-              {isEditingName ? (
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    className="text-sm font-bold border border-emerald-300 rounded-lg px-2 py-0.5 bg-white max-w-[130px]"
-                  />
-                  <button
-                    onClick={() => setIsEditingName(false)}
-                    className="text-xs bg-emerald-600 text-white font-bold px-2 py-1 rounded-md"
-                  >
-                    Save
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <h4 className="font-black text-gray-900 text-base">{userName}</h4>
-                  <button
-                    onClick={() => setIsEditingName(true)}
-                    className="text-[10px] text-emerald-700 font-semibold underline"
-                  >
-                    बदलें
-                  </button>
-                </div>
-              )}
-              <div className="text-xs text-emerald-800 font-medium mt-0.5 flex items-center gap-1">
+              <h4 className="font-black text-gray-900 text-base leading-tight">{displayName}</h4>
+              <p className="text-[11px] text-gray-500 font-medium">{displayContact}</p>
+              <div className="text-xs text-emerald-800 font-bold mt-0.5 flex items-center gap-1">
                 <span>🎯 लक्ष्य: {targetExam}</span>
               </div>
             </div>
@@ -150,7 +163,7 @@ export default function ProfileModal({
               <button
                 key={idx}
                 type="button"
-                onClick={() => setTargetExam(exam)}
+                onClick={() => handleSelectExam(exam)}
                 className={`py-2 px-2.5 rounded-xl text-left text-xs font-bold transition flex items-center justify-between border ${
                   targetExam === exam
                     ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
@@ -196,13 +209,39 @@ export default function ProfileModal({
           </a>
         </div>
 
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="w-full py-3 bg-gray-900 text-white font-bold rounded-2xl text-xs hover:bg-black transition"
-        >
-          बंद करें (Close)
-        </button>
+        {/* Footer Buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          {currentUser ? (
+            <button
+              onClick={() => {
+                onLogout();
+                onClose();
+              }}
+              className="py-3 border border-rose-200 bg-rose-50 text-rose-700 font-bold rounded-2xl text-xs hover:bg-rose-100 flex items-center justify-center gap-1.5 transition"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>लॉग आउट</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenAuth();
+              }}
+              className="py-3 bg-emerald-600 text-white font-bold rounded-2xl text-xs hover:bg-emerald-700 flex items-center justify-center gap-1.5 transition"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>खाता बनाएं</span>
+            </button>
+          )}
+
+          <button
+            onClick={onClose}
+            className="py-3 bg-gray-900 text-white font-bold rounded-2xl text-xs hover:bg-black transition"
+          >
+            बंद करें (Close)
+          </button>
+        </div>
       </div>
     </div>
   );

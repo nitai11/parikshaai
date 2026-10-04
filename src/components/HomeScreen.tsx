@@ -1,6 +1,7 @@
 'use client';
 
-import { Camera, FileText, Sparkles, Swords, Trophy, Clock, Users, ArrowRight, BookOpen, MessageCircle, Shield } from 'lucide-react';
+import { Camera, FileText, Sparkles, Swords, Trophy, Clock, Users, ArrowRight, BookOpen, MessageCircle, Shield, LogIn } from 'lucide-react';
+import { UserProfile } from '@/types/auth';
 
 interface HomeScreenProps {
   onOpenUpload: (initialTopic?: string) => void;
@@ -12,6 +13,8 @@ interface HomeScreenProps {
   onOpenLiveTest: () => void;
   mistakesCount: number;
   isPro: boolean;
+  currentUser?: UserProfile | null;
+  onOpenAuth?: () => void;
 }
 
 const POPULAR_TOPICS = [
@@ -32,24 +35,31 @@ export default function HomeScreen({
   onOpenProfile,
   onOpenLiveTest,
   mistakesCount,
-  isPro
+  isPro,
+  currentUser,
+  onOpenAuth
 }: HomeScreenProps) {
+  const displayName = currentUser ? currentUser.name : 'विद्यार्थी';
+  const initialLetter = currentUser ? currentUser.name.charAt(0).toUpperCase() : '👤';
+
   return (
     <div className="max-w-md mx-auto px-4 pt-4 pb-24 space-y-5 relative">
       {/* Greeting Header */}
       <div className="flex items-center justify-between">
-        <div onClick={onOpenProfile} className="cursor-pointer group">
+        <div onClick={currentUser ? onOpenProfile : (onOpenAuth || onOpenProfile)} className="cursor-pointer group">
           <h2 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition">
-            Namaste, <span className="text-emerald-600">Rahul!</span>
+            Namaste, <span className="text-emerald-600">{displayName}!</span>
           </h2>
-          <p className="text-xs text-gray-500 font-medium">आज आपकी तैयारी का 5वाँ दिन है 🎯 (प्रोफाइल देखें)</p>
+          <p className="text-xs text-gray-500 font-medium">
+            {currentUser ? `लक्ष्य: ${currentUser.targetExam || 'SSC CGL'} 🎯 (प्रोफाइल देखें)` : 'लॉगिन करें और स्ट्रीक सुरक्षित करें ✨'}
+          </p>
         </div>
         <div
-          onClick={onOpenProfile}
+          onClick={currentUser ? onOpenProfile : (onOpenAuth || onOpenProfile)}
           className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md cursor-pointer hover:scale-105 active:scale-95 transition"
-          title="प्रोफाइल खोलें"
+          title={currentUser ? "प्रोफाइल खोलें" : "लॉगिन करें"}
         >
-          R
+          {initialLetter}
         </div>
       </div>
 

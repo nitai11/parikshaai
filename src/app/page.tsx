@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import HomeScreen from '@/components/HomeScreen';
 import QuizPlayer from '@/components/QuizPlayer';
@@ -13,7 +13,9 @@ import LegalModal from '@/components/LegalModal';
 import ProfileModal from '@/components/ProfileModal';
 import LiveTestModal from '@/components/LiveTestModal';
 import BottomNav from '@/components/BottomNav';
+import AuthModal from '@/components/AuthModal';
 import { Quiz, QuizResult, Question } from '@/types/quiz';
+import { UserProfile } from '@/types/auth';
 
 export default function App() {
   const [screen, setScreen] = useState<'home' | 'quiz' | 'scorecard'>('home');
@@ -22,6 +24,57 @@ export default function App() {
   const [isPro, setIsPro] = useState<boolean>(false);
   const [freeTestsUsed, setFreeTestsUsed] = useState<number>(0);
   const [lang, setLang] = useState<'hi' | 'en'>('hi');
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Load user from localStorage on client mount
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('pariksha_user');
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser) as UserProfile;
+        setCurrentUser(parsed);
+        if (parsed.isPro) setIsPro(true);
+        if (parsed.streakDays) setStreakDays(parsed.streakDays);
+      }
+    } catch (e) {
+      console.error('Error reading saved user', e);
+    }
+  }, []);
+
+  const handleLoginSuccess = (user: UserProfile) => {
+    setCurrentUser(user);
+    if (user.isPro) setIsPro(true);
+    if (user.streakDays) setStreakDays(user.streakDays);
+    try {
+      localStorage.setItem('pariksha_user', JSON.stringify(user));
+    } catch (e) {
+      console.error('Error saving user', e);
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('pariksha_user');
+    } catch (e) {
+      console.error('Error clearing user', e);
+    }
+  };
+
+  const handleUpdateTargetExam = (exam: string) => {
+    if (currentUser) {
+      const updated = { ...currentUser, targetExam: exam };
+      setCurrentUser(updated);
+      try {
+        localStorage.setItem('pariksha_user', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error updating target exam', e);
+      }
+    }
+  };
 
   // Active Quiz State
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
@@ -179,6 +232,9 @@ export default function App() {
             onOpenPro={() => setIsProOpen(true)}
             lang={lang}
             setLang={setLang}
+            currentUser={currentUser}
+            onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenProfile={() => setIsProfileOpen(true)}
           />
 
           <HomeScreen
@@ -191,6 +247,8 @@ export default function App() {
             onOpenLiveTest={() => setIsLiveTestOpen(true)}
             mistakesCount={mistakes.length}
             isPro={isPro}
+            currentUser={currentUser}
+            onOpenAuth={() => setIsAuthOpen(true)}
           />
 
           <BottomNav currentTab={currentTab} onSelectTab={handleTabSelect} />
@@ -219,7 +277,16 @@ export default function App() {
       <ProPaywallModal
         isOpen={isProOpen}
         onClose={() => setIsProOpen(false)}
-        onSuccess={() => setIsPro(true)}
+        onSuccess={() => {
+          setIsPro(true);
+          if (currentUser) {
+            const updated = { ...currentUser, isPro: true };
+            setCurrentUser(updated);
+            try {
+              localStorage.setItem('pariksha_user', JSON.stringify(updated));
+            } catch (e) {}
+          }
+        }}
       />
 
       {/* 📕 Mistake Locker (Revision Notebook) Modal */}
@@ -239,6 +306,10 @@ export default function App() {
         isPro={isPro}
         onOpenPro={() => setIsProOpen(true)}
         onOpenMistakes={() => setIsMistakesOpen(true)}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
+        onUpdateTargetExam={handleUpdateTargetExam}
       />
 
       {/* 🏆 All-India 9 PM Live Test Modal */}
@@ -249,6 +320,13 @@ export default function App() {
           setIsLiveTestOpen(false);
           handleStartQuiz('भारतीय इतिहास व संविधान All India Live PYQ', 10, 'medium');
         }}
+      />
+
+      {/* 🔐 Auth Modal (Google & Phone OTP) */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* 📜 Legal & Compliance Modal (Razorpay Mandatory) */}
