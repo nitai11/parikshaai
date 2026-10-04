@@ -1,0 +1,31 @@
+{
+  "viewportsTested": [
+    {
+      "device": "Mobile_Standard_390",
+      "dimensions": "390x844",
+      "overflowFree": true
+    },
+    {
+      "device": "Mobile_Budget_360",
+      "dimensions": "360x740",
+      "overflowFree": false
+    },
+    {
+      "device": "Desktop_1024",
+      "dimensions": "1024x768",
+      "overflowFree": true
+    }
+  ],
+  "modalsTested": [
+    "FeedbackModal",
+    "30Day_ProPassModal",
+    "AuthModal",
+    "ProfileModal",
+    "LiveTestModal"
+  ],
+  "overflowIssues": [
+    "Mobile_Budget_360"
+  ],
+  "consoleErrors": [],
+  "exitDialogWorking": false
+}
