@@ -11,6 +11,7 @@ interface HomeScreenProps {
   onOpenLegal: (tab: 'terms' | 'privacy' | 'refund' | 'contact') => void;
   onOpenProfile: () => void;
   onOpenLiveTest: () => void;
+  onOpenFeedback?: () => void;
   mistakesCount: number;
   isPro: boolean;
   currentUser?: UserProfile | null;
@@ -34,6 +35,7 @@ export default function HomeScreen({
   onOpenLegal,
   onOpenProfile,
   onOpenLiveTest,
+  onOpenFeedback,
   mistakesCount,
   isPro,
   currentUser,
@@ -229,6 +231,25 @@ export default function HomeScreen({
           </button>
         </div>
       )}
+
+      {/* Feedback & Suggestion Card */}
+      <div
+        onClick={onOpenFeedback}
+        className="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl flex items-center justify-between cursor-pointer hover:shadow-xs transition"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs text-base">
+            💬
+          </div>
+          <div>
+            <h4 className="font-bold text-gray-900 text-xs">क्या आपके पास कोई सुझाव है?</h4>
+            <p className="text-[10px] text-gray-500">नया फीचर या परीक्षा जुड़वाने के लिए हमें बताएं</p>
+          </div>
+        </div>
+        <span className="text-amber-800 text-[11px] font-bold bg-amber-100/80 px-2.5 py-1 rounded-full shrink-0">
+          सुझाव दें ✨
+        </span>
+      </div>
 
       {/* Legal Footer Links (Razorpay Mandatory Compliance) */}
       <div className="pt-4 border-t border-gray-200 text-center space-y-2">

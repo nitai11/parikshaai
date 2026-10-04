@@ -15,6 +15,7 @@ interface ProfileModalProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onUpdateTargetExam?: (exam: string) => void;
+  onOpenFeedback?: () => void;
 }
 
 const EXAM_GOALS = [
@@ -36,7 +37,8 @@ export default function ProfileModal({
   currentUser,
   onOpenAuth,
   onLogout,
-  onUpdateTargetExam
+  onUpdateTargetExam,
+  onOpenFeedback
 }: ProfileModalProps) {
   const [targetExam, setTargetExam] = useState(currentUser?.targetExam || 'SSC CGL / CHSL');
 
@@ -207,6 +209,23 @@ export default function ProfileModal({
             </div>
             <span className="text-[11px] text-emerald-700 font-bold">मदद लें ➔</span>
           </a>
+
+          {/* Feedback & Suggestions */}
+          {onOpenFeedback && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenFeedback();
+              }}
+              className="w-full p-3 rounded-2xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/70 transition text-left flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-sm">💬</span>
+                <span className="text-xs font-bold text-gray-900">फीडबैक या नया फीचर सुझाव दें</span>
+              </div>
+              <span className="text-[11px] text-amber-800 font-bold">सुझाव ➔</span>
+            </button>
+          )}
         </div>
 
         {/* Footer Buttons */}

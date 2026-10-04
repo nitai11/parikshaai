@@ -14,6 +14,7 @@ import ProfileModal from '@/components/ProfileModal';
 import LiveTestModal from '@/components/LiveTestModal';
 import BottomNav from '@/components/BottomNav';
 import AuthModal from '@/components/AuthModal';
+import FeedbackModal from '@/components/FeedbackModal';
 import { Quiz, QuizResult, Question } from '@/types/quiz';
 import { UserProfile } from '@/types/auth';
 
@@ -28,6 +29,7 @@ export default function App() {
   // User Authentication State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   // Load user from localStorage on client mount
   useEffect(() => {
@@ -220,6 +222,7 @@ export default function App() {
             setIsUploadOpen(true);
           }}
           onGoHome={() => setScreen('home')}
+          onOpenFeedback={() => setIsFeedbackOpen(true)}
         />
       )}
 
@@ -245,6 +248,7 @@ export default function App() {
             onOpenLegal={handleOpenLegal}
             onOpenProfile={() => setIsProfileOpen(true)}
             onOpenLiveTest={() => setIsLiveTestOpen(true)}
+            onOpenFeedback={() => setIsFeedbackOpen(true)}
             mistakesCount={mistakes.length}
             isPro={isPro}
             currentUser={currentUser}
@@ -310,6 +314,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
         onUpdateTargetExam={handleUpdateTargetExam}
+        onOpenFeedback={() => setIsFeedbackOpen(true)}
       />
 
       {/* 🏆 All-India 9 PM Live Test Modal */}
@@ -327,6 +332,13 @@ export default function App() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={handleLoginSuccess}
+      />
+
+      {/* 💬 Student Feedback & Suggestion Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        currentUser={currentUser}
       />
 
       {/* 📜 Legal & Compliance Modal (Razorpay Mandatory) */}

@@ -9,12 +9,14 @@ interface ScorecardScreenProps {
   result: QuizResult;
   onNewQuiz: () => void;
   onGoHome: () => void;
+  onOpenFeedback?: () => void;
 }
 
 export default function ScorecardScreen({
   result,
   onNewQuiz,
-  onGoHome
+  onGoHome,
+  onOpenFeedback
 }: ScorecardScreenProps) {
   useEffect(() => {
     // Fire festive celebration confetti
@@ -137,6 +139,16 @@ export default function ScorecardScreen({
             <span>होम स्क्रीन</span>
           </button>
         </div>
+
+        {/* Feedback Link */}
+        {onOpenFeedback && (
+          <button
+            onClick={onOpenFeedback}
+            className="w-full py-2.5 text-center text-xs font-semibold text-gray-500 hover:text-emerald-700 transition flex items-center justify-center gap-1.5"
+          >
+            <span>💬 क्विज़ कैसी लगी? अपना फीडबैक / सुझाव दें</span>
+          </button>
+        )}
       </div>
     </div>
   );
