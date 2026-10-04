@@ -68,7 +68,7 @@ export default function FeedbackModal({
       `📞 Contact: ${contactInfo || 'N/A'}\n\n` +
       `💬 Message:\n${message || 'App bahut acchi hai!'}`
     );
-    window.open(`https://wa.me/919876543210?text=${text}`, '_blank');
+    window.open(`https://wa.me/918558993896?text=${text}`, '_blank');
   };
 
   const handleReset = () => {

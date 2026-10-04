@@ -287,7 +287,7 @@ export default function HomeScreen({
 
       {/* Floating WhatsApp Support Button */}
       <a
-        href="https://api.whatsapp.com/send?phone=919876543210&text=Namaste!%20I%20need%20help%20with%20ParikshaAI"
+        href="https://api.whatsapp.com/send?phone=918558993896&text=Namaste!%20I%20need%20help%20with%20ParikshaAI"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-18 right-4 z-30 w-12 h-12 rounded-full bg-[#25D366] text-white shadow-xl shadow-emerald-500/30 flex items-center justify-center hover:scale-105 transition"

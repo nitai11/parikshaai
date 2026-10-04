@@ -198,7 +198,7 @@ export default function ProfileModal({
 
           {/* WhatsApp Support Action */}
           <a
-            href="https://api.whatsapp.com/send?phone=919876543210&text=Namaste!%20I%20have%20a%20query%20about%20ParikshaAI"
+            href="https://api.whatsapp.com/send?phone=918558993896&text=Namaste!%20I%20have%20a%20query%20about%20ParikshaAI"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full p-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/60 transition text-left flex items-center justify-between block"
