@@ -1,69 +1,234 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState } from 'react';
+import Navbar from '@/components/Navbar';
+import HomeScreen from '@/components/HomeScreen';
+import QuizPlayer from '@/components/QuizPlayer';
+import ScorecardScreen from '@/components/ScorecardScreen';
+import UploadModal from '@/components/UploadModal';
+import BattleModal from '@/components/BattleModal';
+import ProPaywallModal from '@/components/ProPaywallModal';
+import MistakeLockerModal from '@/components/MistakeLockerModal';
+import LegalModal from '@/components/LegalModal';
+import BottomNav from '@/components/BottomNav';
+import { Quiz, QuizResult, Question } from '@/types/quiz';
+
+export default function App() {
+  const [screen, setScreen] = useState<'home' | 'quiz' | 'scorecard'>('home');
+  const [currentTab, setCurrentTab] = useState<'home' | 'battle' | 'leaderboard' | 'pro'>('home');
+  const [streakDays, setStreakDays] = useState<number>(4);
+  const [isPro, setIsPro] = useState<boolean>(false);
+  const [freeTestsUsed, setFreeTestsUsed] = useState<number>(0);
+  const [lang, setLang] = useState<'hi' | 'en'>('hi');
+
+  // Active Quiz State
+  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
+  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
+
+  // Mistakes List (Revision Locker)
+  const [mistakes, setMistakes] = useState<Question[]>([]);
+
+  // Modals
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isBattleOpen, setIsBattleOpen] = useState(false);
+  const [isProOpen, setIsProOpen] = useState(false);
+  const [isMistakesOpen, setIsMistakesOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<'terms' | 'privacy' | 'refund' | 'contact'>('terms');
+  const [selectedInitialTopic, setSelectedInitialTopic] = useState<string>('');
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
+
+  // Handle generating and starting quiz
+  const handleStartQuiz = async (
+    topicOrText: string,
+    questionCount: number,
+    difficulty: string,
+    base64Image?: string
+  ) => {
+    // Check free limit
+    if (!isPro && freeTestsUsed >= 2) {
+      setIsUploadOpen(false);
+      setIsProOpen(true);
+      return;
+    }
+
+    setIsLoadingQuiz(true);
+    try {
+      const res = await fetch('/api/generate-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topicOrText,
+          questionCount,
+          difficulty,
+          base64Image
+        })
+      });
+
+      const data = await res.json();
+      if (data.success && data.quiz) {
+        setCurrentQuiz(data.quiz);
+        setFreeTestsUsed((prev) => prev + 1);
+        setIsUploadOpen(false);
+        setScreen('quiz');
+      } else {
+        alert('क्विज़ बनाने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+      }
+    } catch (err) {
+      console.error('Quiz creation error:', err);
+      alert('सर्वर से कनेक्ट करने में समस्या हुई। कृपया इंटरनेट कनेक्शन जांचें।');
+    } finally {
+      setIsLoadingQuiz(false);
+    }
+  };
+
+  const handleFinishQuiz = (result: QuizResult) => {
+    setQuizResult(result);
+    setStreakDays((prev) => prev + 1);
+
+    // Save incorrect questions into Mistakes Locker
+    if (currentQuiz) {
+      const wrongAnswers = result.answers.filter((a) => !a.isCorrect);
+      const wrongQuestions = currentQuiz.questions.filter((q) =>
+        wrongAnswers.some((a) => a.questionId === q.id)
+      );
+
+      if (wrongQuestions.length > 0) {
+        setMistakes((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newUnique = wrongQuestions.filter((wq) => !existingIds.has(wq.id));
+          return [...prev, ...newUnique];
+        });
+      }
+    }
+
+    setScreen('scorecard');
+  };
+
+  const handleStartRevisionQuiz = (revisionQuestions: Question[]) => {
+    setCurrentQuiz({
+      id: `rev_${Date.now()}`,
+      topic: 'रिवीज़न: मेरी पुरानी गलतियाँ',
+      questions: revisionQuestions,
+      totalQuestions: revisionQuestions.length,
+      difficulty: 'medium',
+      createdAt: new Date().toISOString()
+    });
+    setScreen('quiz');
+  };
+
+  const handleOpenUpload = (initialTopic?: string) => {
+    setSelectedInitialTopic(initialTopic || '');
+    setIsUploadOpen(true);
+  };
+
+  const handleOpenLegal = (tab: 'terms' | 'privacy' | 'refund' | 'contact') => {
+    setLegalTab(tab);
+    setIsLegalOpen(true);
+  };
+
+  const handleTabSelect = (tab: 'home' | 'battle' | 'leaderboard' | 'pro') => {
+    setCurrentTab(tab);
+    if (tab === 'home') {
+      setScreen('home');
+    } else if (tab === 'battle') {
+      setIsBattleOpen(true);
+    } else if (tab === 'leaderboard') {
+      alert('🏆 All-India 9 PM Live Test आज रात 9:00 बजे शुरू होगा! 12,450 छात्र तैयार हैं।');
+    } else if (tab === 'pro') {
+      setIsProOpen(true);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen bg-gray-50 text-gray-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-800">
+      {/* Quiz Screen has its own full screen view */}
+      {screen === 'quiz' && currentQuiz && (
+        <QuizPlayer
+          topic={currentQuiz.topic}
+          questions={currentQuiz.questions}
+          onFinishQuiz={handleFinishQuiz}
+          onExit={() => setScreen('home')}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      )}
+
+      {/* Scorecard Screen */}
+      {screen === 'scorecard' && quizResult && (
+        <ScorecardScreen
+          result={quizResult}
+          onNewQuiz={() => {
+            setScreen('home');
+            setIsUploadOpen(true);
+          }}
+          onGoHome={() => setScreen('home')}
+        />
+      )}
+
+      {/* Home Dashboard */}
+      {screen === 'home' && (
+        <>
+          <Navbar
+            streakDays={streakDays}
+            isPro={isPro}
+            onOpenPro={() => setIsProOpen(true)}
+            lang={lang}
+            setLang={setLang}
+          />
+
+          <HomeScreen
+            onOpenUpload={handleOpenUpload}
+            onOpenBattle={() => setIsBattleOpen(true)}
+            onOpenPro={() => setIsProOpen(true)}
+            onOpenMistakes={() => setIsMistakesOpen(true)}
+            onOpenLegal={handleOpenLegal}
+            mistakesCount={mistakes.length}
+            isPro={isPro}
+          />
+
+          <BottomNav currentTab={currentTab} onSelectTab={handleTabSelect} />
+        </>
+      )}
+
+      {/* Upload & AI Generation Modal (With Voice Mic) */}
+      <UploadModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onStartQuiz={handleStartQuiz}
+        isLoading={isLoadingQuiz}
+        initialTopic={selectedInitialTopic}
+      />
+
+      {/* 1v1 Chai Challenge Modal */}
+      <BattleModal
+        isOpen={isBattleOpen}
+        onClose={() => setIsBattleOpen(false)}
+        onSelectTopic={(topic) => {
+          handleStartQuiz(topic, 5, 'medium');
+        }}
+      />
+
+      {/* Pro Paywall Modal (UPI ₹49 Pass) */}
+      <ProPaywallModal
+        isOpen={isProOpen}
+        onClose={() => setIsProOpen(false)}
+        onSuccess={() => setIsPro(true)}
+      />
+
+      {/* 📕 Mistake Locker (Revision Notebook) Modal */}
+      <MistakeLockerModal
+        isOpen={isMistakesOpen}
+        onClose={() => setIsMistakesOpen(false)}
+        mistakes={mistakes}
+        onStartRevisionQuiz={handleStartRevisionQuiz}
+        onClearMistakes={() => setMistakes([])}
+      />
+
+      {/* 📜 Legal & Compliance Modal (Razorpay Mandatory) */}
+      <LegalModal
+        isOpen={isLegalOpen}
+        onClose={() => setIsLegalOpen(false)}
+        defaultTab={legalTab}
+      />
+    </main>
   );
 }
