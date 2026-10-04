@@ -15,6 +15,7 @@ import LiveTestModal from '@/components/LiveTestModal';
 import BottomNav from '@/components/BottomNav';
 import AuthModal from '@/components/AuthModal';
 import FeedbackModal from '@/components/FeedbackModal';
+import { LogOut, AlertTriangle } from 'lucide-react';
 import { Quiz, QuizResult, Question } from '@/types/quiz';
 import { UserProfile } from '@/types/auth';
 
@@ -30,6 +31,22 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  // Modals & Navigation States
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isBattleOpen, setIsBattleOpen] = useState(false);
+  const [isProOpen, setIsProOpen] = useState(false);
+  const [isMistakesOpen, setIsMistakesOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLiveTestOpen, setIsLiveTestOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<'terms' | 'privacy' | 'refund' | 'contact'>('terms');
+  const [selectedInitialTopic, setSelectedInitialTopic] = useState<string>('');
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
+
+  // Exit Confirmation Dialogs (Back Button Handling)
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
+  const [isExitQuizDialogOpen, setIsExitQuizDialogOpen] = useState(false);
 
   // Load user from localStorage on client mount
   useEffect(() => {
@@ -78,24 +95,115 @@ export default function App() {
     }
   };
 
+  // 🛡️ Mobile / Browser Back Button Interception
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Push initial history entry so pressing back triggers popstate instead of exiting
+    window.history.pushState({ page: 'pariksha_active' }, '');
+
+    const handlePopState = () => {
+      // 1. If any modal is open, close that modal first
+      if (isExitDialogOpen) {
+        setIsExitDialogOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isExitQuizDialogOpen) {
+        setIsExitQuizDialogOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isFeedbackOpen) {
+        setIsFeedbackOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isAuthOpen) {
+        setIsAuthOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isLiveTestOpen) {
+        setIsLiveTestOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isProfileOpen) {
+        setIsProfileOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isLegalOpen) {
+        setIsLegalOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isMistakesOpen) {
+        setIsMistakesOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isProOpen) {
+        setIsProOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isBattleOpen) {
+        setIsBattleOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+      if (isUploadOpen) {
+        setIsUploadOpen(false);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+
+      // 2. If user is inside active Quiz, confirm before quitting
+      if (screen === 'quiz') {
+        setIsExitQuizDialogOpen(true);
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+
+      // 3. If in Scorecard, return safely to home screen
+      if (screen === 'scorecard') {
+        setScreen('home');
+        window.history.pushState({ page: 'pariksha_active' }, '');
+        return;
+      }
+
+      // 4. On Home screen with no modal open, show confirmation dialog: "Do you want to close?"
+      setIsExitDialogOpen(true);
+      window.history.pushState({ page: 'pariksha_active' }, '');
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [
+    isExitDialogOpen,
+    isExitQuizDialogOpen,
+    isFeedbackOpen,
+    isAuthOpen,
+    isLiveTestOpen,
+    isProfileOpen,
+    isLegalOpen,
+    isMistakesOpen,
+    isProOpen,
+    isBattleOpen,
+    isUploadOpen,
+    screen
+  ]);
+
   // Active Quiz State
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
 
   // Mistakes List (Revision Locker)
   const [mistakes, setMistakes] = useState<Question[]>([]);
-
-  // Modals
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isBattleOpen, setIsBattleOpen] = useState(false);
-  const [isProOpen, setIsProOpen] = useState(false);
-  const [isMistakesOpen, setIsMistakesOpen] = useState(false);
-  const [isLegalOpen, setIsLegalOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isLiveTestOpen, setIsLiveTestOpen] = useState(false);
-  const [legalTab, setLegalTab] = useState<'terms' | 'privacy' | 'refund' | 'contact'>('terms');
-  const [selectedInitialTopic, setSelectedInitialTopic] = useState<string>('');
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
 
   // Handle generating and starting quiz
   const handleStartQuiz = async (
@@ -347,6 +455,81 @@ export default function App() {
         onClose={() => setIsLegalOpen(false)}
         defaultTab={legalTab}
       />
+
+      {/* 🚪 Exit App Confirmation Dialog (Back Button) */}
+      {isExitDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-xs bg-white rounded-3xl p-5 shadow-2xl border border-gray-100 text-center animate-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+              <LogOut className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-black text-gray-900">
+              क्या आप ऐप बंद करना चाहते हैं?
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Do you want to exit ParikshaAI? आपकी आज की स्ट्रीक सुरक्षित है!
+            </p>
+
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button
+                onClick={() => setIsExitDialogOpen(false)}
+                className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+              >
+                नहीं, रुकें (Stay)
+              </button>
+              <button
+                onClick={() => {
+                  setIsExitDialogOpen(false);
+                  if (typeof window !== 'undefined') {
+                    window.history.go(-2);
+                    setTimeout(() => {
+                      window.close();
+                    }, 100);
+                  }
+                }}
+                className="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition"
+              >
+                हाँ, बाहर जाएं (Exit)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⚠️ Exit Quiz Confirmation Dialog (Back Button during Quiz) */}
+      {isExitQuizDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-xs bg-white rounded-3xl p-5 shadow-2xl border border-gray-100 text-center animate-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+              <AlertTriangle className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-black text-gray-900">
+              क्या आप परीक्षा छोड़ना चाहते हैं?
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              बीच में छोड़ने से आपका टेस्ट स्कोर सुरक्षित नहीं होगा।
+            </p>
+
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button
+                onClick={() => setIsExitQuizDialogOpen(false)}
+                className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
+              >
+                जारी रखें (Resume)
+              </button>
+              <button
+                onClick={() => {
+                  setIsExitQuizDialogOpen(false);
+                  setScreen('home');
+                }}
+                className="py-2.5 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold text-xs rounded-xl transition"
+              >
+                छोड़ें (Quit)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
