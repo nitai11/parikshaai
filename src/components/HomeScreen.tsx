@@ -9,6 +9,7 @@ interface HomeScreenProps {
   onOpenMistakes: () => void;
   onOpenLegal: (tab: 'terms' | 'privacy' | 'refund' | 'contact') => void;
   onOpenProfile: () => void;
+  onOpenLiveTest: () => void;
   mistakesCount: number;
   isPro: boolean;
 }
@@ -29,6 +30,7 @@ export default function HomeScreen({
   onOpenMistakes,
   onOpenLegal,
   onOpenProfile,
+  onOpenLiveTest,
   mistakesCount,
   isPro
 }: HomeScreenProps) {
@@ -146,7 +148,10 @@ export default function HomeScreen({
       </div>
 
       {/* 🏆 All-India 9 PM Live Event Banner */}
-      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-4 shadow-xs relative overflow-hidden">
+      <div
+        onClick={onOpenLiveTest}
+        className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:border-amber-400 rounded-3xl p-4 shadow-xs relative overflow-hidden cursor-pointer transition group"
+      >
         <div className="flex items-center justify-between mb-2">
           <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-white" />

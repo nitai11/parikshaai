@@ -11,6 +11,7 @@ import ProPaywallModal from '@/components/ProPaywallModal';
 import MistakeLockerModal from '@/components/MistakeLockerModal';
 import LegalModal from '@/components/LegalModal';
 import ProfileModal from '@/components/ProfileModal';
+import LiveTestModal from '@/components/LiveTestModal';
 import BottomNav from '@/components/BottomNav';
 import { Quiz, QuizResult, Question } from '@/types/quiz';
 
@@ -36,6 +37,7 @@ export default function App() {
   const [isMistakesOpen, setIsMistakesOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLiveTestOpen, setIsLiveTestOpen] = useState(false);
   const [legalTab, setLegalTab] = useState<'terms' | 'privacy' | 'refund' | 'contact'>('terms');
   const [selectedInitialTopic, setSelectedInitialTopic] = useState<string>('');
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
@@ -136,7 +138,7 @@ export default function App() {
     } else if (tab === 'battle') {
       setIsBattleOpen(true);
     } else if (tab === 'leaderboard') {
-      alert('🏆 All-India 9 PM Live Test आज रात 9:00 बजे शुरू होगा! 12,450 छात्र तैयार हैं।');
+      setIsLiveTestOpen(true);
     } else if (tab === 'pro') {
       setIsProOpen(true);
     } else if (tab === 'profile') {
@@ -186,6 +188,7 @@ export default function App() {
             onOpenMistakes={() => setIsMistakesOpen(true)}
             onOpenLegal={handleOpenLegal}
             onOpenProfile={() => setIsProfileOpen(true)}
+            onOpenLiveTest={() => setIsLiveTestOpen(true)}
             mistakesCount={mistakes.length}
             isPro={isPro}
           />
@@ -236,6 +239,16 @@ export default function App() {
         isPro={isPro}
         onOpenPro={() => setIsProOpen(true)}
         onOpenMistakes={() => setIsMistakesOpen(true)}
+      />
+
+      {/* 🏆 All-India 9 PM Live Test Modal */}
+      <LiveTestModal
+        isOpen={isLiveTestOpen}
+        onClose={() => setIsLiveTestOpen(false)}
+        onStartPractice={() => {
+          setIsLiveTestOpen(false);
+          handleStartQuiz('भारतीय इतिहास व संविधान All India Live PYQ', 10, 'medium');
+        }}
       />
 
       {/* 📜 Legal & Compliance Modal (Razorpay Mandatory) */}
