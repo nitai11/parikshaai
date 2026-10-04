@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Home, Swords, Trophy, Crown } from 'lucide-react';
+import { Home, Swords, Trophy, Crown, User } from 'lucide-react';
 
 interface BottomNavProps {
-  currentTab: 'home' | 'battle' | 'leaderboard' | 'pro';
-  onSelectTab: (tab: 'home' | 'battle' | 'leaderboard' | 'pro') => void;
+  currentTab: 'home' | 'battle' | 'leaderboard' | 'pro' | 'profile';
+  onSelectTab: (tab: 'home' | 'battle' | 'leaderboard' | 'pro' | 'profile') => void;
 }
 
 export default function BottomNav({ currentTab, onSelectTab }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-gray-100 py-2 px-6 shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-gray-100 py-2 px-4 shadow-lg">
       <div className="max-w-md mx-auto flex items-center justify-around">
         {/* Home */}
         <button
@@ -54,6 +54,17 @@ export default function BottomNav({ currentTab, onSelectTab }: BottomNavProps) {
         >
           <Crown className="w-5 h-5" />
           <span className="text-[10px]">Pro Pass</span>
+        </button>
+
+        {/* Profile */}
+        <button
+          onClick={() => onSelectTab('profile')}
+          className={`flex flex-col items-center gap-1 transition ${
+            currentTab === 'profile' ? 'text-emerald-600 font-bold' : 'text-gray-400 font-medium'
+          }`}
+        >
+          <User className="w-5 h-5" />
+          <span className="text-[10px]">Profile</span>
         </button>
       </div>
     </nav>

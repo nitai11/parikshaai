@@ -10,12 +10,13 @@ import BattleModal from '@/components/BattleModal';
 import ProPaywallModal from '@/components/ProPaywallModal';
 import MistakeLockerModal from '@/components/MistakeLockerModal';
 import LegalModal from '@/components/LegalModal';
+import ProfileModal from '@/components/ProfileModal';
 import BottomNav from '@/components/BottomNav';
 import { Quiz, QuizResult, Question } from '@/types/quiz';
 
 export default function App() {
   const [screen, setScreen] = useState<'home' | 'quiz' | 'scorecard'>('home');
-  const [currentTab, setCurrentTab] = useState<'home' | 'battle' | 'leaderboard' | 'pro'>('home');
+  const [currentTab, setCurrentTab] = useState<'home' | 'battle' | 'leaderboard' | 'pro' | 'profile'>('home');
   const [streakDays, setStreakDays] = useState<number>(4);
   const [isPro, setIsPro] = useState<boolean>(false);
   const [freeTestsUsed, setFreeTestsUsed] = useState<number>(0);
@@ -34,6 +35,7 @@ export default function App() {
   const [isProOpen, setIsProOpen] = useState(false);
   const [isMistakesOpen, setIsMistakesOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [legalTab, setLegalTab] = useState<'terms' | 'privacy' | 'refund' | 'contact'>('terms');
   const [selectedInitialTopic, setSelectedInitialTopic] = useState<string>('');
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
@@ -127,7 +129,7 @@ export default function App() {
     setIsLegalOpen(true);
   };
 
-  const handleTabSelect = (tab: 'home' | 'battle' | 'leaderboard' | 'pro') => {
+  const handleTabSelect = (tab: 'home' | 'battle' | 'leaderboard' | 'pro' | 'profile') => {
     setCurrentTab(tab);
     if (tab === 'home') {
       setScreen('home');
@@ -137,6 +139,8 @@ export default function App() {
       alert('🏆 All-India 9 PM Live Test आज रात 9:00 बजे शुरू होगा! 12,450 छात्र तैयार हैं।');
     } else if (tab === 'pro') {
       setIsProOpen(true);
+    } else if (tab === 'profile') {
+      setIsProfileOpen(true);
     }
   };
 
@@ -181,6 +185,7 @@ export default function App() {
             onOpenPro={() => setIsProOpen(true)}
             onOpenMistakes={() => setIsMistakesOpen(true)}
             onOpenLegal={handleOpenLegal}
+            onOpenProfile={() => setIsProfileOpen(true)}
             mistakesCount={mistakes.length}
             isPro={isPro}
           />
@@ -221,6 +226,16 @@ export default function App() {
         mistakes={mistakes}
         onStartRevisionQuiz={handleStartRevisionQuiz}
         onClearMistakes={() => setMistakes([])}
+      />
+
+      {/* 👤 Student Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        streakDays={streakDays}
+        isPro={isPro}
+        onOpenPro={() => setIsProOpen(true)}
+        onOpenMistakes={() => setIsMistakesOpen(true)}
       />
 
       {/* 📜 Legal & Compliance Modal (Razorpay Mandatory) */}

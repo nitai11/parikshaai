@@ -8,6 +8,7 @@ interface HomeScreenProps {
   onOpenPro: () => void;
   onOpenMistakes: () => void;
   onOpenLegal: (tab: 'terms' | 'privacy' | 'refund' | 'contact') => void;
+  onOpenProfile: () => void;
   mistakesCount: number;
   isPro: boolean;
 }
@@ -27,6 +28,7 @@ export default function HomeScreen({
   onOpenPro,
   onOpenMistakes,
   onOpenLegal,
+  onOpenProfile,
   mistakesCount,
   isPro
 }: HomeScreenProps) {
@@ -34,13 +36,17 @@ export default function HomeScreen({
     <div className="max-w-md mx-auto px-4 pt-4 pb-24 space-y-5 relative">
       {/* Greeting Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+        <div onClick={onOpenProfile} className="cursor-pointer group">
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight group-hover:text-emerald-700 transition">
             Namaste, <span className="text-emerald-600">Rahul!</span>
           </h2>
-          <p className="text-xs text-gray-500 font-medium">आज आपकी तैयारी का 5वाँ दिन है 🎯</p>
+          <p className="text-xs text-gray-500 font-medium">आज आपकी तैयारी का 5वाँ दिन है 🎯 (प्रोफाइल देखें)</p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+        <div
+          onClick={onOpenProfile}
+          className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md cursor-pointer hover:scale-105 active:scale-95 transition"
+          title="प्रोफाइल खोलें"
+        >
           R
         </div>
       </div>
