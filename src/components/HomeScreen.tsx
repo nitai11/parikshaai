@@ -216,21 +216,31 @@ export default function HomeScreen({
         <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-orange-600 group-hover:translate-x-1 transition" />
       </div>
 
-      {/* Pro Pass Callout Banner (if not pro) */}
-      {!isPro && (
-        <div
-          onClick={onOpenPro}
-          className="bg-gradient-to-r from-emerald-600 to-indigo-600 rounded-2xl p-3.5 text-white flex items-center justify-between cursor-pointer hover:opacity-95 transition shadow-md shadow-emerald-600/20"
-        >
-          <div>
-            <div className="font-black text-xs">⚡ ParikshaAI Pro Pass सिर्फ ₹49 में</div>
-            <div className="text-[11px] text-emerald-100">अनलिमिटेड टेस्ट और नोट्स स्कैनिंग अनलॉक करें</div>
+      {/* 30-Day Free Launch Pass Banner */}
+      <div
+        onClick={onOpenPro}
+        className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-700 rounded-2xl p-3.5 text-white flex items-center justify-between cursor-pointer hover:opacity-95 transition shadow-md shadow-emerald-600/20"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs text-white flex items-center justify-center font-black text-sm shrink-0">
+            🎁
           </div>
-          <button className="bg-white text-emerald-700 text-xs font-black px-3 py-1.5 rounded-xl shadow-xs">
-            Unlock
-          </button>
+          <div>
+            <div className="font-black text-xs flex items-center gap-1.5">
+              <span>अर्ली एक्सेस: 30 Days Free Pro Pass</span>
+              <span className="bg-amber-400 text-amber-950 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">
+                Active
+              </span>
+            </div>
+            <div className="text-[11px] text-emerald-100">
+              अनलिमिटेड AI टेस्ट और नोट्स स्कैनिंग 100% मुफ़्त है!
+            </div>
+          </div>
         </div>
-      )}
+        <button className="bg-white text-emerald-700 text-xs font-black px-3 py-1.5 rounded-xl shadow-xs shrink-0">
+          Details
+        </button>
+      </div>
 
       {/* Feedback & Suggestion Card */}
       <div

@@ -58,20 +58,15 @@ export default function Navbar({
             {lang === 'hi' ? 'हिंदी' : 'ENG'}
           </button>
 
-          {/* Pro Pass or Bell */}
-          {isPro ? (
-            <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px]">
-              PRO
-            </div>
-          ) : (
-            <button
-              onClick={onOpenPro}
-              className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-xs hover:opacity-95 transition"
-            >
-              <Crown className="w-2.5 h-2.5" />
-              <span>₹49</span>
-            </button>
-          )}
+          {/* Pro Pass Badge */}
+          <button
+            onClick={onOpenPro}
+            className="flex items-center gap-1 bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-xs hover:opacity-95 transition"
+            title="30-Day Free Pro Pass Active!"
+          >
+            <Crown className="w-2.5 h-2.5 text-amber-300 fill-amber-300" />
+            <span>PRO Pass</span>
+          </button>
 
           {/* Auth Button or User Avatar */}
           {currentUser ? (

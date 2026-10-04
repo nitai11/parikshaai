@@ -64,94 +64,54 @@ export default function ProPaywallModal({
             <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
               <Check className="w-3 h-3" />
             </div>
-            <span>Khan Sir स्टाइल में देसी AI एक्सप्लेनेशन व डाउट सॉल्विंग</span>
+            <span>Khan Sir स्टाइल में देसी AI एक्सप्लेनेशन व समाधान</span>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
             <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
               <Check className="w-3 h-3" />
             </div>
-            <span>All-India 9 PM Live Test में स्पेशल State Rank बैज</span>
+            <span>All-India 9 PM Live Test में स्पेशल स्टेट रैंक बैज</span>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
             <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
               <Check className="w-3 h-3" />
             </div>
-            <span>कोचिंग और दोस्तों के साथ 1v1 बैटल अनलिमिटेड</span>
+            <span>दोस्तों के साथ 1v1 चाय बैटल अनलिमिटेड</span>
           </div>
         </div>
 
-        {/* Plan Cards */}
-        <div className="space-y-2.5 mb-5">
-          {/* Monthly Plan */}
-          <div
-            onClick={() => setSelectedPlan('monthly')}
-            className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-center justify-between ${
-              selectedPlan === 'monthly'
-                ? 'border-emerald-600 bg-emerald-50/40 shadow-xs'
-                : 'border-gray-200 bg-white hover:bg-gray-50'
-            }`}
-          >
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-gray-900 text-sm">1 Month Unlimited Pass</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  लोकप्रिय
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">सिर्फ़ एक समोसे के बराबर कीमत!</p>
-            </div>
+        {/* 30 Days Free Launching Banner Card */}
+        <div className="p-4 rounded-2xl border-2 border-emerald-600 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-xs mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="bg-emerald-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              🎉 Launching Offer
+            </span>
             <div className="text-right">
-              <div className="text-xl font-black text-emerald-700">₹49</div>
-              <div className="text-[10px] text-gray-400 line-through">₹199</div>
+              <span className="text-xl font-black text-emerald-700">₹0 (FREE)</span>
+              <span className="text-[11px] text-gray-400 line-through ml-1.5">₹49/mo</span>
             </div>
           </div>
-
-          {/* Yearly Plan */}
-          <div
-            onClick={() => setSelectedPlan('yearly')}
-            className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-center justify-between ${
-              selectedPlan === 'yearly'
-                ? 'border-emerald-600 bg-emerald-50/40 shadow-xs'
-                : 'border-gray-200 bg-white hover:bg-gray-50'
-            }`}
-          >
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-gray-900 text-sm">Full Year (12 Months) Pass</span>
-                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">
-                  60% OFF
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">पूरे साल किसी भी परीक्षा के लिए</p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-black text-emerald-700">₹299</div>
-              <div className="text-[10px] text-gray-400 line-through">₹799</div>
-            </div>
-          </div>
+          <h4 className="font-black text-gray-900 text-sm">30 Days Unlimited Pro Access</h4>
+          <p className="text-xs text-emerald-800 font-medium mt-1">
+            शुरुआती छात्रों के लिए पहले 30 दिन का पूरा प्रो पास 100% मुफ़्त है! जितने मर्जी चाहे टेस्ट बनाएं।
+          </p>
         </div>
 
-        {/* UPI Checkout Button */}
+        {/* Action Button */}
         <button
-          onClick={handlePayUPI}
-          disabled={isProcessing}
-          className="w-full py-4 bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/25 flex items-center justify-center gap-2 hover:opacity-95 transition text-sm disabled:opacity-50"
+          onClick={() => {
+            onSuccess();
+            onClose();
+          }}
+          className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/25 flex items-center justify-center gap-2 hover:opacity-95 transition text-sm"
         >
-          {isProcessing ? (
-            <span>UPI पेमेंट कनेक्ट हो रहा है...</span>
-          ) : (
-            <>
-              <Zap className="w-4 h-4 fill-white" />
-              <span>
-                {selectedPlan === 'monthly' ? '₹49 देकर Unlock करें (GPay / PhonePe / Paytm)' : '₹299 देकर Unlock करें'}
-              </span>
-            </>
-          )}
+          <Zap className="w-4 h-4 fill-white" />
+          <span>✅ 30 Days Free Pass Active है • पढ़ाई शुरू करें</span>
         </button>
 
-        <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-gray-400 font-medium">
+        <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-gray-500 font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>100% सुरक्षित UPI पेमेंट • 7-Day Money Back Guarantee</span>
+          <span>कोई क्रेडिट कार्ड या फीस नहीं • 100% मुफ़्त अर्ली एक्सेस</span>
         </div>
       </div>
     </div>

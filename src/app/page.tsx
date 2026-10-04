@@ -23,7 +23,7 @@ export default function App() {
   const [screen, setScreen] = useState<'home' | 'quiz' | 'scorecard'>('home');
   const [currentTab, setCurrentTab] = useState<'home' | 'battle' | 'leaderboard' | 'pro' | 'profile'>('home');
   const [streakDays, setStreakDays] = useState<number>(4);
-  const [isPro, setIsPro] = useState<boolean>(false);
+  const [isPro, setIsPro] = useState<boolean>(true); // 30-Day Early Bird Launch: All students get Free Unlimited Pro Pass!
   const [freeTestsUsed, setFreeTestsUsed] = useState<number>(0);
   const [lang, setLang] = useState<'hi' | 'en'>('hi');
 
