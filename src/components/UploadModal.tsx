@@ -23,6 +23,8 @@ export default function UploadModal({
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>('');
+  const [isPdfFile, setIsPdfFile] = useState<boolean>(false);
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -70,12 +72,91 @@ export default function UploadModal({
 
   if (!isOpen) return null;
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Compress image on client side to ensure <300KB size for instant upload and perfect OCR
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round(height * (MAX_WIDTH / width));
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round(width * (MAX_HEIGHT / height));
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context failed'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        // 0.8 quality produces ~150-250KB high-res JPEG
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(compressedBase64);
+      };
+      img.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    if (isPdf) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('कृपया 5MB से छोटी PDF फाइल अपलोड करें ताकि AI तुरंत पढ़ सके।');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result as string);
+        setSelectedFileName(file.name);
+        setIsPdfFile(true);
+        if (!topic.trim()) {
+          const cleanName = file.name.replace(/\.[^/.]+$/, '');
+          setTopic(cleanName ? `${cleanName} (PDF नोट्स)` : 'PDF नोट्स से AI टेस्ट');
+        }
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // It is an Image / Screenshot / Camera Photo
+    try {
+      const compressed = await compressImage(file);
+      setSelectedImage(compressed);
+      setSelectedFileName(file.name);
+      setIsPdfFile(false);
+      if (!topic.trim()) {
+        setTopic('फोटो / स्क्रीनशॉट नोट्स');
+      }
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+        setSelectedFileName(file.name);
+        setIsPdfFile(false);
+        if (!topic.trim()) {
+          setTopic('फोटो / स्क्रीनशॉट नोट्स');
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -84,7 +165,8 @@ export default function UploadModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topic.trim() && !selectedImage) return;
-    await onStartQuiz(topic, questionCount, difficulty, selectedImage || undefined);
+    const finalTopic = topic.trim() || (isPdfFile ? 'PDF नोट्स से AI टेस्ट' : 'स्क्रीनशॉट नोट्स से AI टेस्ट');
+    await onStartQuiz(finalTopic, questionCount, difficulty, selectedImage || undefined);
   };
 
   return (
@@ -167,23 +249,68 @@ export default function UploadModal({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {/* Content Input or Preview */}
           {selectedImage ? (
-            <div className="relative rounded-2xl overflow-hidden border border-emerald-200 bg-emerald-50/50 p-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-emerald-800 mb-2">
-                <span>✓ नोट्स की फोटो सेलेक्ट हो गई</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedImage(null)}
-                  className="text-red-500 hover:underline"
-                >
-                  हटाएं (Remove)
-                </button>
+            isPdfFile ? (
+              <div className="relative rounded-2xl border border-red-200 bg-red-50/40 p-4">
+                <div className="flex items-center justify-between text-xs font-semibold text-red-800 mb-2">
+                  <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    PDF डॉक्यूमेंट सेलेक्ट हो गया
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setSelectedFileName('');
+                      setIsPdfFile(false);
+                    }}
+                    className="text-red-500 hover:text-red-700 font-medium text-xs hover:underline"
+                  >
+                    हटाएं (Remove)
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-red-100 shadow-xs">
+                  <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-gray-900 truncate">
+                      {selectedFileName || 'PDF Document'}
+                    </p>
+                    <p className="text-[11px] text-emerald-600 font-medium">
+                      ✓ AI इस PDF के अध्यायों से सीधे सवाल बनाएगा
+                    </p>
+                  </div>
+                </div>
               </div>
-              <img
-                src={selectedImage}
-                alt="Selected notes preview"
-                className="max-h-40 w-full object-cover rounded-xl border border-emerald-100"
-              />
-            </div>
+            ) : (
+              <div className="relative rounded-2xl overflow-hidden border border-emerald-200 bg-emerald-50/50 p-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-emerald-800 mb-2">
+                  <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    फोटो / स्क्रीनशॉट नोट्स सेलेक्ट हो गया
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setSelectedFileName('');
+                      setIsPdfFile(false);
+                    }}
+                    className="text-red-500 hover:text-red-700 font-medium text-xs hover:underline"
+                  >
+                    हटाएं (Remove)
+                  </button>
+                </div>
+                <img
+                  src={selectedImage}
+                  alt="Selected notes preview"
+                  className="max-h-48 w-full object-contain rounded-xl border border-emerald-100 bg-white"
+                />
+                <p className="text-[11px] text-emerald-700 font-medium mt-2 text-center">
+                  ✓ AI इस फोटो / स्क्रीनशॉट नोट्स को पढ़कर सीधे सवाल बनाएगा
+                </p>
+              </div>
+            )
           ) : (
             <div>
               <div className="flex items-center justify-between mb-1">

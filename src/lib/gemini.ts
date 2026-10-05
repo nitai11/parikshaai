@@ -92,33 +92,59 @@ export async function generateQuizFromAI(
   try {
     const ai = new GoogleGenAI({ apiKey });
     
+    const isPdf = Boolean(base64Image && (base64Image.startsWith('data:application/pdf') || base64Image.includes('application/pdf')));
+    const isImage = Boolean(base64Image && !isPdf);
+
+    let taskInstruction = `Generate exactly ${questionCount} multiple choice questions (MCQs) for the topic or notes provided: "${topicOrText}".`;
+    if (isPdf) {
+      taskInstruction = `TASK: You are given an uploaded PDF study material/notes. Carefully read and analyze all pages, text, formulas, facts, and topics inside this PDF document.
+Generate exactly ${questionCount} multiple choice questions (MCQs) STRICTLY AND DIRECTLY BASED on the content of this PDF document.
+${topicOrText ? `Optional user focus hint: "${topicOrText}".` : ''}
+Do not invent unrelated questions outside this document.`;
+    } else if (isImage) {
+      taskInstruction = `TASK: You are given an uploaded photo, screenshot, or handwritten notes. Carefully examine and READ ALL TEXT, notes, formulas, dates, diagrams, and concepts present in this uploaded image.
+Generate exactly ${questionCount} multiple choice questions (MCQs) STRICTLY AND DIRECTLY BASED on the information written in this image/screenshot.
+${topicOrText ? `Optional user focus hint: "${topicOrText}".` : ''}
+Do not invent questions outside what is visible in this image.`;
+    }
+
     const prompt = `You are ParikshaAI, an expert Indian competitive exam mentor (SSC CGL, UPSC, Railway, State PCS).
-Generate exactly ${questionCount} multiple choice questions (MCQs) for the topic or notes provided: "${topicOrText}".
+${taskInstruction}
 Difficulty Level: ${difficulty}.
 
-Requirements:
-1. Every question MUST be bilingual: Hindi first, followed by clear English translation.
-2. Provide exactly 4 options.
-3. Keep questions strictly relevant to Indian exams (standard PYQ pattern).
-4. Provide a friendly, clear explanation in both Hindi and English.
-5. Return ONLY a valid JSON array matching this exact schema without any markdown formatting or code block quotes:
+CRITICAL REQUIREMENTS:
+1. Every question MUST directly test what is provided in the material. Do not invent unrelated topics.
+2. Every question MUST be bilingual: Hindi first, followed by clear English translation.
+3. Provide exactly 4 distinct options in the "options" array.
+4. "correctAnswer" MUST BE A ZERO-BASED INTEGER INDEX (0 for 1st option, 1 for 2nd option, 2 for 3rd option, 3 for 4th option). DO NOT output string text for correctAnswer.
+5. Provide a clear, friendly explanation in both Hindi and English based on the material content.
+6. Return ONLY a valid JSON array matching this exact schema:
 
 [
   {
     "id": 1,
-    "questionHi": "हिंदी में प्रश्न",
-    "questionEn": "Question in English",
+    "questionHi": "दिए गए दस्तावेज़ / इमेज के आधार पर प्रश्न",
+    "questionEn": "Question in English based on material",
     "options": ["Option A", "Option B", "Option C", "Option D"],
     "correctAnswer": 0,
-    "explanationHi": "हिंदी में आसान भाषा में समझाएं",
-    "explanationEn": "Explanation in English"
+    "explanationHi": "हिंदी में आसान भाषा में समाधान",
+    "explanationEn": "Clear explanation in English"
   }
 ]`;
 
     let response;
     if (base64Image) {
-      const mimeType = base64Image.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-      const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
+      let mimeType = 'image/jpeg';
+      if (isPdf) {
+        mimeType = 'application/pdf';
+      } else if (base64Image.startsWith('data:image/png')) {
+        mimeType = 'image/png';
+      } else if (base64Image.startsWith('data:image/webp')) {
+        mimeType = 'image/webp';
+      }
+      
+      // Clean prefix for any mime type: data:image/png;base64,... or data:application/pdf;base64,...
+      const cleanBase64 = base64Image.replace(/^data:[^;]+;base64,/, '').trim();
       
       response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -146,8 +172,31 @@ Requirements:
 
     const text = response.text || '';
     // Strip markdown code fences if present
-    const cleanedJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    const parsed: Question[] = JSON.parse(cleanedJson);
+    const cleanedJson = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const firstBracket = cleanedJson.indexOf('[');
+    const lastBracket = cleanedJson.lastIndexOf(']');
+    let jsonToParse = cleanedJson;
+    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+      jsonToParse = cleanedJson.substring(firstBracket, lastBracket + 1);
+    }
+    const parsed: Question[] = JSON.parse(jsonToParse);
+
+    // Normalize correctAnswer to ensure it is always a valid 0-based integer index
+    parsed.forEach((q, idx) => {
+      q.id = idx + 1;
+      if (typeof q.correctAnswer !== 'number') {
+        const parsedNum = parseInt(String(q.correctAnswer), 10);
+        if (!isNaN(parsedNum) && parsedNum >= 0 && parsedNum < q.options.length) {
+          q.correctAnswer = parsedNum;
+        } else {
+          // If it returned option text like "1526" or "बाबर", find matching option
+          const matchIdx = q.options.findIndex(
+            (opt) => opt.toLowerCase().trim() === String(q.correctAnswer).toLowerCase().trim()
+          );
+          q.correctAnswer = matchIdx !== -1 ? matchIdx : 0;
+        }
+      }
+    });
     
     return parsed.length > 0 ? parsed : fallbackQuestions.default.slice(0, questionCount);
   } catch (error) {
