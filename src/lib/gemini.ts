@@ -82,7 +82,7 @@ export async function generateQuizFromAI(
   difficulty: string = 'medium',
   base64Image?: string
 ): Promise<Question[]> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyBV-8qIxu-_7Sjg9ax55UUoXZbH8_JDTss';
 
   if (!apiKey) {
     console.log("No GEMINI_API_KEY found, returning curated mock exam questions.");
