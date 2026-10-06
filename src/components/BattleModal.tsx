@@ -19,7 +19,7 @@ export default function BattleModal({
 
   if (!isOpen) return null;
 
-  const challengeUrl = typeof window !== 'undefined' ? `${window.location.origin}?battle=true` : 'https://parikshaai.in';
+  const challengeUrl = typeof window !== 'undefined' ? `${window.location.origin}?battle=true` : 'https://pariksha.nitaiitsolution.in';
 
   const shareText = `⚔️ 1v1 Chai Challenge!\n\nमैंने ParikshaAI पर "${battleTopic}" का क्विज़ बैटल शुरू किया है!\n☕ हारने वाला शाम की चाय पिलाएगा!\n\n👇 अभी लिंक पर क्लिक करके मुझे हराओ:\n${challengeUrl}`;
 

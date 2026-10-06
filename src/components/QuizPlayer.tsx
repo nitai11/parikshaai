@@ -9,13 +9,15 @@ interface QuizPlayerProps {
   questions: Question[];
   onFinishQuiz: (result: QuizResult) => void;
   onExit: () => void;
+  streakDays?: number;
 }
 
 export default function QuizPlayer({
   topic,
   questions,
   onFinishQuiz,
-  onExit
+  onExit,
+  streakDays = 5
 }: QuizPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -120,7 +122,7 @@ export default function QuizPlayer({
       timeTakenFormatted: `${mins}m ${secs}s`,
       weakTopics,
       percentileRank,
-      streakDays: 4 + 1,
+      streakDays: streakDays + 1,
       answers: userAnswers
     };
 

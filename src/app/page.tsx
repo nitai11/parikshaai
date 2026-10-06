@@ -328,6 +328,7 @@ export default function App() {
           questions={currentQuiz.questions}
           onFinishQuiz={handleFinishQuiz}
           onExit={() => setScreen('home')}
+          streakDays={streakDays}
         />
       )}
 

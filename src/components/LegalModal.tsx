@@ -114,8 +114,8 @@ export default function LegalModal({
               <p>हम 24/7 छात्रों की सहायता के लिए उपलब्ध हैं:</p>
               <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-1.5 text-xs">
                 <div>📧 <strong>ईमेल:</strong> support@nitaiitsolution.in</div>
-                <div>💬 <strong>WhatsApp सहायता:</strong> +91 98765 43210</div>
-                <div>🏢 <strong>कार्यालय:</strong> ParikshaAI EduTech, New Delhi, India</div>
+                <div>💬 <strong>WhatsApp सहायता:</strong> +91 85589 93896</div>
+                <div>🏢 <strong>कार्यालय:</strong> Nitai IT Solution, India</div>
               </div>
             </div>
           )}
