@@ -10,6 +10,7 @@ interface MistakeLockerModalProps {
   mistakes: Question[];
   onStartRevisionQuiz: (questions: Question[]) => void;
   onClearMistakes: () => void;
+  isFromProfile?: boolean;
 }
 
 export default function MistakeLockerModal({
@@ -17,7 +18,8 @@ export default function MistakeLockerModal({
   onClose,
   mistakes,
   onStartRevisionQuiz,
-  onClearMistakes
+  onClearMistakes,
+  isFromProfile = false
 }: MistakeLockerModalProps) {
   if (!isOpen) return null;
 
@@ -53,6 +55,12 @@ export default function MistakeLockerModal({
             <p className="text-xs text-gray-500 mt-1 max-w-xs mx-auto">
               जब भी आप किसी टेस्ट में गलत जवाब देंगे, वो सवाल यहाँ सेव हो जाएगा ताकि आप उसका रिवीज़न कर सकें।
             </p>
+            <button
+              onClick={onClose}
+              className="mt-4 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+            >
+              {isFromProfile ? '← प्रोफाइल पर वापस जाएँ' : 'बंद करें'}
+            </button>
           </div>
         ) : (
           <div className="py-4 space-y-3">
@@ -93,6 +101,13 @@ export default function MistakeLockerModal({
               >
                 <Trash2 className="w-3.5 h-3.5 text-gray-400" />
                 <span>डायरी खाली करें (Clear All)</span>
+              </button>
+
+              <button
+                onClick={onClose}
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+              >
+                {isFromProfile ? '← प्रोफाइल पर वापस जाएँ (Back to Profile)' : 'बंद करें (Close)'}
               </button>
             </div>
           </div>

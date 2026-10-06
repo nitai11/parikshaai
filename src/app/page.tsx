@@ -31,6 +31,7 @@ export default function App() {
   // Test History State (Saved across reloads)
   const [testHistory, setTestHistory] = useState<TestHistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [returnToProfileOnClose, setReturnToProfileOnClose] = useState(false);
 
   // User Authentication State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -112,6 +113,7 @@ export default function App() {
 
   // 🛡️ Mobile / Browser Back Button Interception with Ref
   const stateRef = useRef({
+    returnToProfileOnClose,
     isHistoryOpen,
     isExitDialogOpen,
     isExitQuizDialogOpen,
@@ -129,6 +131,7 @@ export default function App() {
 
   useEffect(() => {
     stateRef.current = {
+      returnToProfileOnClose,
       isHistoryOpen,
       isExitDialogOpen,
       isExitQuizDialogOpen,
@@ -157,9 +160,37 @@ export default function App() {
       // Always re-arm the history state so subsequent back presses are also caught
       window.history.pushState({ page: 'pariksha_base' }, '');
 
-      // 1. If any modal is open, close that modal
+      // 1. If any modal is open, close that modal (and return to profile if opened from profile)
       if (cur.isHistoryOpen) {
         setIsHistoryOpen(false);
+        if (cur.returnToProfileOnClose) {
+          setIsProfileOpen(true);
+          setReturnToProfileOnClose(false);
+        }
+        return;
+      }
+      if (cur.isMistakesOpen) {
+        setIsMistakesOpen(false);
+        if (cur.returnToProfileOnClose) {
+          setIsProfileOpen(true);
+          setReturnToProfileOnClose(false);
+        }
+        return;
+      }
+      if (cur.isFeedbackOpen) {
+        setIsFeedbackOpen(false);
+        if (cur.returnToProfileOnClose) {
+          setIsProfileOpen(true);
+          setReturnToProfileOnClose(false);
+        }
+        return;
+      }
+      if (cur.isProOpen) {
+        setIsProOpen(false);
+        if (cur.returnToProfileOnClose) {
+          setIsProfileOpen(true);
+          setReturnToProfileOnClose(false);
+        }
         return;
       }
       if (cur.isExitDialogOpen) {
@@ -168,10 +199,6 @@ export default function App() {
       }
       if (cur.isExitQuizDialogOpen) {
         setIsExitQuizDialogOpen(false);
-        return;
-      }
-      if (cur.isFeedbackOpen) {
-        setIsFeedbackOpen(false);
         return;
       }
       if (cur.isAuthOpen) {
@@ -184,18 +211,11 @@ export default function App() {
       }
       if (cur.isProfileOpen) {
         setIsProfileOpen(false);
+        setReturnToProfileOnClose(false);
         return;
       }
       if (cur.isLegalOpen) {
         setIsLegalOpen(false);
-        return;
-      }
-      if (cur.isMistakesOpen) {
-        setIsMistakesOpen(false);
-        return;
-      }
-      if (cur.isProOpen) {
-        setIsProOpen(false);
         return;
       }
       if (cur.isBattleOpen) {
@@ -354,6 +374,39 @@ export default function App() {
     ? Math.round(testHistory.reduce((sum, t) => sum + t.scorePercentage, 0) / testHistory.length)
     : 0;
 
+  // Submodal close handlers ensuring returning to profile when opened from profile
+  const handleCloseHistory = () => {
+    setIsHistoryOpen(false);
+    if (returnToProfileOnClose) {
+      setIsProfileOpen(true);
+      setReturnToProfileOnClose(false);
+    }
+  };
+
+  const handleCloseMistakes = () => {
+    setIsMistakesOpen(false);
+    if (returnToProfileOnClose) {
+      setIsProfileOpen(true);
+      setReturnToProfileOnClose(false);
+    }
+  };
+
+  const handleCloseFeedback = () => {
+    setIsFeedbackOpen(false);
+    if (returnToProfileOnClose) {
+      setIsProfileOpen(true);
+      setReturnToProfileOnClose(false);
+    }
+  };
+
+  const handleClosePro = () => {
+    setIsProOpen(false);
+    if (returnToProfileOnClose) {
+      setIsProfileOpen(true);
+      setReturnToProfileOnClose(false);
+    }
+  };
+
   const handleStartRevisionQuiz = (revisionQuestions: Question[]) => {
     setCurrentQuiz({
       id: `rev_${Date.now()}`,
@@ -437,17 +490,29 @@ export default function App() {
           <HomeScreen
             onOpenUpload={handleOpenUpload}
             onOpenBattle={() => setIsBattleOpen(true)}
-            onOpenPro={() => setIsProOpen(true)}
-            onOpenMistakes={() => setIsMistakesOpen(true)}
+            onOpenPro={() => {
+              setReturnToProfileOnClose(false);
+              setIsProOpen(true);
+            }}
+            onOpenMistakes={() => {
+              setReturnToProfileOnClose(false);
+              setIsMistakesOpen(true);
+            }}
             onOpenLegal={handleOpenLegal}
             onOpenProfile={() => setIsProfileOpen(true)}
             onOpenLiveTest={() => setIsLiveTestOpen(true)}
-            onOpenFeedback={() => setIsFeedbackOpen(true)}
+            onOpenFeedback={() => {
+              setReturnToProfileOnClose(false);
+              setIsFeedbackOpen(true);
+            }}
             mistakesCount={mistakes.length}
             isPro={isPro}
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthOpen(true)}
-            onOpenHistory={() => setIsHistoryOpen(true)}
+            onOpenHistory={() => {
+              setReturnToProfileOnClose(false);
+              setIsHistoryOpen(true);
+            }}
             testHistoryCount={testHistory.length}
           />
 
@@ -476,7 +541,7 @@ export default function App() {
       {/* Pro Paywall Modal (UPI ₹49 Pass) */}
       <ProPaywallModal
         isOpen={isProOpen}
-        onClose={() => setIsProOpen(false)}
+        onClose={handleClosePro}
         onSuccess={() => {
           setIsPro(true);
           if (currentUser) {
@@ -492,45 +557,71 @@ export default function App() {
       {/* 📕 Mistake Locker (Revision Notebook) Modal */}
       <MistakeLockerModal
         isOpen={isMistakesOpen}
-        onClose={() => setIsMistakesOpen(false)}
+        onClose={handleCloseMistakes}
         mistakes={mistakes}
-        onStartRevisionQuiz={handleStartRevisionQuiz}
+        onStartRevisionQuiz={(revQuestions) => {
+          setReturnToProfileOnClose(false);
+          handleStartRevisionQuiz(revQuestions);
+        }}
         onClearMistakes={() => setMistakes([])}
+        isFromProfile={returnToProfileOnClose}
       />
 
       {/* 👤 Student Profile Modal */}
       <ProfileModal
         isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+        onClose={() => {
+          setIsProfileOpen(false);
+          setReturnToProfileOnClose(false);
+        }}
         streakDays={streakDays}
         isPro={isPro}
-        onOpenPro={() => setIsProOpen(true)}
-        onOpenMistakes={() => setIsMistakesOpen(true)}
+        onOpenPro={() => {
+          setReturnToProfileOnClose(true);
+          setIsProfileOpen(false);
+          setIsProOpen(true);
+        }}
+        onOpenMistakes={() => {
+          setReturnToProfileOnClose(true);
+          setIsProfileOpen(false);
+          setIsMistakesOpen(true);
+        }}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
         onUpdateTargetExam={handleUpdateTargetExam}
-        onOpenFeedback={() => setIsFeedbackOpen(true)}
+        onOpenFeedback={() => {
+          setReturnToProfileOnClose(true);
+          setIsProfileOpen(false);
+          setIsFeedbackOpen(true);
+        }}
         testsCount={testHistory.length}
         avgAccuracy={avgAccuracy}
         totalQuestions={totalQuestionsAttempted}
-        onOpenHistory={() => setIsHistoryOpen(true)}
+        onOpenHistory={() => {
+          setReturnToProfileOnClose(true);
+          setIsProfileOpen(false);
+          setIsHistoryOpen(true);
+        }}
       />
 
       {/* 📜 Test History & Analytics Modal */}
       <TestHistoryModal
         isOpen={isHistoryOpen}
-        onClose={() => setIsHistoryOpen(false)}
+        onClose={handleCloseHistory}
         history={testHistory}
         onRetestTopic={(topic) => {
           setIsHistoryOpen(false);
+          setReturnToProfileOnClose(false);
           handleStartQuiz(topic, 10, 'medium');
         }}
         onClearHistory={handleClearHistory}
         onOpenUpload={() => {
           setIsHistoryOpen(false);
+          setReturnToProfileOnClose(false);
           handleOpenUpload();
         }}
+        isFromProfile={returnToProfileOnClose}
       />
 
       {/* 🏆 All-India 9 PM Live Test Modal */}
@@ -553,7 +644,7 @@ export default function App() {
       {/* 💬 Student Feedback & Suggestion Modal */}
       <FeedbackModal
         isOpen={isFeedbackOpen}
-        onClose={() => setIsFeedbackOpen(false)}
+        onClose={handleCloseFeedback}
         currentUser={currentUser}
       />
 

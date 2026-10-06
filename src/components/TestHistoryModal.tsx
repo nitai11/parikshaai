@@ -11,6 +11,7 @@ interface TestHistoryModalProps {
   onRetestTopic: (topic: string) => void;
   onClearHistory: () => void;
   onOpenUpload: () => void;
+  isFromProfile?: boolean;
 }
 
 export default function TestHistoryModal({
@@ -19,7 +20,8 @@ export default function TestHistoryModal({
   history,
   onRetestTopic,
   onClearHistory,
-  onOpenUpload
+  onOpenUpload,
+  isFromProfile = false
 }: TestHistoryModalProps) {
   if (!isOpen) return null;
 
@@ -189,9 +191,13 @@ export default function TestHistoryModal({
         <div className="mt-4 pt-3 border-t border-gray-100">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-md transition"
+            className="w-full py-3 bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5"
           >
-            बंद करें (Close)
+            {isFromProfile ? (
+              <span>← प्रोफाइल पर वापस जाएँ (Back to Profile)</span>
+            ) : (
+              <span>बंद करें (Close)</span>
+            )}
           </button>
         </div>
       </div>
