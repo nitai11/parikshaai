@@ -16,6 +16,8 @@ interface HomeScreenProps {
   isPro: boolean;
   currentUser?: UserProfile | null;
   onOpenAuth?: () => void;
+  onOpenHistory?: () => void;
+  testHistoryCount?: number;
 }
 
 const POPULAR_TOPICS = [
@@ -39,7 +41,9 @@ export default function HomeScreen({
   mistakesCount,
   isPro,
   currentUser,
-  onOpenAuth
+  onOpenAuth,
+  onOpenHistory,
+  testHistoryCount = 0
 }: HomeScreenProps) {
   const displayName = currentUser ? currentUser.name : 'विद्यार्थी';
   const initialLetter = currentUser ? currentUser.name.charAt(0).toUpperCase() : '👤';
@@ -136,6 +140,32 @@ export default function HomeScreen({
         </div>
         <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-rose-600 group-hover:translate-x-1 transition" />
       </div>
+
+      {/* 📜 टेस्ट इतिहास व रिपोर्ट (Test History Card) */}
+      {onOpenHistory && (
+        <div
+          onClick={onOpenHistory}
+          className="bg-white rounded-3xl p-4 border border-indigo-200 shadow-xs cursor-pointer hover:border-indigo-400 transition flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-sm text-gray-900">टेस्ट इतिहास (Test History)</span>
+                <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded-md">
+                  {testHistoryCount} टेस्ट संपन्न
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 font-medium">
+                पुराने सभी टेस्ट, स्कोर, सही-गलत सवाल व रिपोर्ट देखें!
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition" />
+        </div>
+      )}
 
       {/* Popular Topics Section */}
       <div>

@@ -16,6 +16,10 @@ interface ProfileModalProps {
   onLogout: () => void;
   onUpdateTargetExam?: (exam: string) => void;
   onOpenFeedback?: () => void;
+  testsCount?: number;
+  avgAccuracy?: number;
+  totalQuestions?: number;
+  onOpenHistory?: () => void;
 }
 
 const EXAM_GOALS = [
@@ -38,7 +42,11 @@ export default function ProfileModal({
   onOpenAuth,
   onLogout,
   onUpdateTargetExam,
-  onOpenFeedback
+  onOpenFeedback,
+  testsCount = 0,
+  avgAccuracy = 0,
+  totalQuestions = 0,
+  onOpenHistory
 }: ProfileModalProps) {
   const [targetExam, setTargetExam] = useState(currentUser?.targetExam || 'SSC CGL / CHSL');
 
@@ -143,14 +151,14 @@ export default function ProfileModal({
             <div className="flex items-center justify-center text-blue-500 mb-1">
               <Target className="w-4 h-4" />
             </div>
-            <div className="text-sm font-black text-gray-900">80%</div>
+            <div className="text-sm font-black text-gray-900">{avgAccuracy}%</div>
             <div className="text-[10px] text-gray-500 font-medium">Avg Accuracy</div>
           </div>
           <div className="p-3 bg-gray-50 border border-gray-100 rounded-2xl">
             <div className="flex items-center justify-center text-amber-500 mb-1">
               <Trophy className="w-4 h-4" />
             </div>
-            <div className="text-sm font-black text-gray-900">12</div>
+            <div className="text-sm font-black text-gray-900">{testsCount}</div>
             <div className="text-[10px] text-gray-500 font-medium">Tests Given</div>
           </div>
         </div>
@@ -181,6 +189,25 @@ export default function ProfileModal({
 
         {/* Quick Menu Actions */}
         <div className="space-y-2 mb-4">
+          {/* Test History Action */}
+          {onOpenHistory && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenHistory();
+              }}
+              className="w-full p-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition text-left flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2.5">
+                <Trophy className="w-4 h-4 text-indigo-600" />
+                <span className="text-xs font-bold text-gray-900">
+                  टेस्ट इतिहास व रिपोर्ट ({testsCount} टेस्ट, {totalQuestions} सवाल)
+                </span>
+              </div>
+              <span className="text-[11px] text-indigo-700 font-bold">हिस्ट्री देखें ➔</span>
+            </button>
+          )}
+
           {/* Mistake Locker Action */}
           <button
             onClick={() => {

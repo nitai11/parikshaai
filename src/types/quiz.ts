@@ -36,3 +36,14 @@ export interface QuizResult {
   streakDays: number;
   answers: UserAnswer[];
 }
+
+export interface TestHistoryItem {
+  id: string;
+  quizId: string;
+  topic: string;
+  totalQuestions: number;
+  correctAnswers: number;
+  scorePercentage: number;
+  timeTakenFormatted: string;
+  completedAt: string;
+}

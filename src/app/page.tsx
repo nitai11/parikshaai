@@ -15,8 +15,9 @@ import LiveTestModal from '@/components/LiveTestModal';
 import BottomNav from '@/components/BottomNav';
 import AuthModal from '@/components/AuthModal';
 import FeedbackModal from '@/components/FeedbackModal';
+import TestHistoryModal from '@/components/TestHistoryModal';
 import { LogOut, AlertTriangle } from 'lucide-react';
-import { Quiz, QuizResult, Question } from '@/types/quiz';
+import { Quiz, QuizResult, Question, TestHistoryItem } from '@/types/quiz';
 import { UserProfile } from '@/types/auth';
 
 export default function App() {
@@ -26,6 +27,10 @@ export default function App() {
   const [isPro, setIsPro] = useState<boolean>(true); // 30-Day Early Bird Launch: All students get Free Unlimited Pro Pass!
   const [freeTestsUsed, setFreeTestsUsed] = useState<number>(0);
   const [lang, setLang] = useState<'hi' | 'en'>('hi');
+
+  // Test History State (Saved across reloads)
+  const [testHistory, setTestHistory] = useState<TestHistoryItem[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // User Authentication State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -48,7 +53,7 @@ export default function App() {
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const [isExitQuizDialogOpen, setIsExitQuizDialogOpen] = useState(false);
 
-  // Load user from localStorage on client mount
+  // Load user, test history, and mistakes from localStorage on client mount
   useEffect(() => {
     try {
       const savedUser = localStorage.getItem('pariksha_user');
@@ -58,8 +63,18 @@ export default function App() {
         if (parsed.isPro) setIsPro(true);
         if (parsed.streakDays) setStreakDays(parsed.streakDays);
       }
+
+      const savedHistory = localStorage.getItem('pariksha_test_history');
+      if (savedHistory) {
+        setTestHistory(JSON.parse(savedHistory));
+      }
+
+      const savedMistakes = localStorage.getItem('pariksha_mistakes');
+      if (savedMistakes) {
+        setMistakes(JSON.parse(savedMistakes));
+      }
     } catch (e) {
-      console.error('Error reading saved user', e);
+      console.error('Error reading saved data from localStorage', e);
     }
   }, []);
 
@@ -97,6 +112,7 @@ export default function App() {
 
   // 🛡️ Mobile / Browser Back Button Interception with Ref
   const stateRef = useRef({
+    isHistoryOpen,
     isExitDialogOpen,
     isExitQuizDialogOpen,
     isFeedbackOpen,
@@ -113,6 +129,7 @@ export default function App() {
 
   useEffect(() => {
     stateRef.current = {
+      isHistoryOpen,
       isExitDialogOpen,
       isExitQuizDialogOpen,
       isFeedbackOpen,
@@ -141,6 +158,10 @@ export default function App() {
       window.history.pushState({ page: 'pariksha_base' }, '');
 
       // 1. If any modal is open, close that modal
+      if (cur.isHistoryOpen) {
+        setIsHistoryOpen(false);
+        return;
+      }
       if (cur.isExitDialogOpen) {
         setIsExitDialogOpen(false);
         return;
@@ -263,7 +284,26 @@ export default function App() {
     setQuizResult(result);
     setStreakDays((prev) => prev + 1);
 
-    // Save incorrect questions into Mistakes Locker
+    // 1. Create and save TestHistory record permanently
+    const newRecord: TestHistoryItem = {
+      id: `th_${Date.now()}`,
+      quizId: result.quizId,
+      topic: result.topic,
+      totalQuestions: result.totalQuestions,
+      correctAnswers: result.correctAnswers,
+      scorePercentage: result.scorePercentage,
+      timeTakenFormatted: result.timeTakenFormatted,
+      completedAt: new Date().toISOString()
+    };
+    const updatedHistory = [newRecord, ...testHistory];
+    setTestHistory(updatedHistory);
+    try {
+      localStorage.setItem('pariksha_test_history', JSON.stringify(updatedHistory));
+    } catch (e) {
+      console.error('Error saving test history', e);
+    }
+
+    // 2. Save incorrect questions into Mistakes Locker & persist in localStorage
     if (currentQuiz) {
       const wrongAnswers = result.answers.filter((a) => !a.isCorrect);
       const wrongQuestions = currentQuiz.questions.filter((q) =>
@@ -274,13 +314,45 @@ export default function App() {
         setMistakes((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
           const newUnique = wrongQuestions.filter((wq) => !existingIds.has(wq.id));
-          return [...prev, ...newUnique];
+          const merged = [...prev, ...newUnique];
+          try {
+            localStorage.setItem('pariksha_mistakes', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
         });
       }
     }
 
+    // 3. Update User testsGiven & streak
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        testsGiven: updatedHistory.length,
+        streakDays: streakDays + 1
+      };
+      setCurrentUser(updatedUser);
+      try {
+        localStorage.setItem('pariksha_user', JSON.stringify(updatedUser));
+      } catch (e) {}
+    }
+
     setScreen('scorecard');
   };
+
+  const handleClearHistory = () => {
+    if (confirm('क्या आप सच में अपनी टेस्ट हिस्ट्री मिटाना चाहते हैं?')) {
+      setTestHistory([]);
+      try {
+        localStorage.removeItem('pariksha_test_history');
+      } catch (e) {}
+    }
+  };
+
+  // Aggregated Test Statistics
+  const totalQuestionsAttempted = testHistory.reduce((sum, t) => sum + t.totalQuestions, 0);
+  const avgAccuracy = testHistory.length > 0
+    ? Math.round(testHistory.reduce((sum, t) => sum + t.scorePercentage, 0) / testHistory.length)
+    : 0;
 
   const handleStartRevisionQuiz = (revisionQuestions: Question[]) => {
     setCurrentQuiz({
@@ -375,6 +447,8 @@ export default function App() {
             isPro={isPro}
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenHistory={() => setIsHistoryOpen(true)}
+            testHistoryCount={testHistory.length}
           />
 
           <BottomNav currentTab={currentTab} onSelectTab={handleTabSelect} />
@@ -437,6 +511,26 @@ export default function App() {
         onLogout={handleLogout}
         onUpdateTargetExam={handleUpdateTargetExam}
         onOpenFeedback={() => setIsFeedbackOpen(true)}
+        testsCount={testHistory.length}
+        avgAccuracy={avgAccuracy}
+        totalQuestions={totalQuestionsAttempted}
+        onOpenHistory={() => setIsHistoryOpen(true)}
+      />
+
+      {/* 📜 Test History & Analytics Modal */}
+      <TestHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        history={testHistory}
+        onRetestTopic={(topic) => {
+          setIsHistoryOpen(false);
+          handleStartQuiz(topic, 10, 'medium');
+        }}
+        onClearHistory={handleClearHistory}
+        onOpenUpload={() => {
+          setIsHistoryOpen(false);
+          handleOpenUpload();
+        }}
       />
 
       {/* 🏆 All-India 9 PM Live Test Modal */}
