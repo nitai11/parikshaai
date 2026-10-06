@@ -32,6 +32,23 @@ export default function FeedbackModal({
 
   if (!isOpen) return null;
 
+  const sendToWhatsApp = (msgText: string, ratingVal: number, tagVal: string, contactVal: string) => {
+    const tagName = FEEDBACK_TAGS.find(t => t.id === tagVal)?.label || tagVal;
+    const text = encodeURIComponent(
+      `*📢 ParikshaAI छात्र फीडबैक व सुझाव*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `⭐ रेटिंग: ${ratingVal}/5 स्टार्स\n` +
+      `🏷️ प्रकार: ${tagName}\n` +
+      `👤 छात्र का नाम: ${currentUser?.name || 'विद्यार्थी'}\n` +
+      `📞 संपर्क/ईमेल: ${contactVal || 'उपलब्ध नहीं'}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `💬 संदेश:\n${msgText}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `🌐 पोर्टल: https://pariksha.nitaiitsolution.in`
+    );
+    window.open(`https://wa.me/918558993896?text=${text}`, '_blank');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) {
@@ -39,7 +56,7 @@ export default function FeedbackModal({
       return;
     }
 
-    // Save locally
+    // 1. Save locally in student's browser
     try {
       const existing = JSON.parse(localStorage.getItem('pariksha_feedback_list') || '[]');
       existing.push({
@@ -56,19 +73,14 @@ export default function FeedbackModal({
       console.error('Error saving feedback', err);
     }
 
+    // 2. Direct WhatsApp dispatch to Admin (+91 8558993896) so you always receive it!
+    sendToWhatsApp(message.trim(), rating, selectedTag, contactInfo.trim());
+
     setIsSubmitted(true);
   };
 
   const handleWhatsAppSend = () => {
-    const text = encodeURIComponent(
-      `*ParikshaAI Feedback & Suggestion*\n\n` +
-      `⭐ Rating: ${rating}/5 Stars\n` +
-      `🏷️ Type: ${selectedTag}\n` +
-      `👤 Name: ${currentUser?.name || 'विद्यार्थी'}\n` +
-      `📞 Contact: ${contactInfo || 'N/A'}\n\n` +
-      `💬 Message:\n${message || 'App bahut acchi hai!'}`
-    );
-    window.open(`https://wa.me/918558993896?text=${text}`, '_blank');
+    sendToWhatsApp(message.trim() || 'App बहुत अच्छी है!', rating, selectedTag, contactInfo.trim());
   };
 
   const handleReset = () => {
@@ -107,11 +119,18 @@ export default function FeedbackModal({
             <div>
               <h4 className="text-xl font-black text-gray-900">बहुत-बहुत धन्यवाद! 🙏</h4>
               <p className="text-xs text-gray-600 mt-1 max-w-xs mx-auto">
-                आपका सुझाव हमारी टीम के पास सुरक्षित पहुँच गया है। हम आपके सुझाव पर जल्द काम करेंगे!
+                आपका फीडबैक सीधे हमारी टीम के WhatsApp (+91 85589 93896) पर भेज दिया गया है। हम जल्द ही इस पर काम करेंगे!
               </p>
             </div>
 
             <div className="pt-2 flex flex-col gap-2">
+              <button
+                onClick={handleWhatsAppSend}
+                className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition"
+              >
+                <MessageCircle className="w-4 h-4 text-emerald-600" />
+                <span>WhatsApp चैट दोबारा खोलें</span>
+              </button>
               <button
                 onClick={handleReset}
                 className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition"
@@ -205,23 +224,19 @@ export default function FeedbackModal({
               />
             </div>
 
-            {/* Submit Button */}
-            <div className="space-y-2 pt-2">
+            {/* Note & Submit Button */}
+            <p className="text-[11px] text-gray-500 text-center flex items-center justify-center gap-1">
+              <span>⚡</span>
+              <span>फीडबैक सीधे एडमिन टीम के WhatsApp पर भेजा जाएगा।</span>
+            </p>
+
+            <div className="space-y-2 pt-1">
               <button
                 type="submit"
                 className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 transition active:scale-[0.99]"
               >
-                <Send className="w-4 h-4" />
-                <span>फीडबैक सबमिट करें (Submit Feedback)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleWhatsAppSend}
-                className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition"
-              >
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-                <span>सीधे WhatsApp पर सुझाव भेजें</span>
+                <MessageCircle className="w-4 h-4" />
+                <span>फीडबैक भेजें (Send to WhatsApp Support)</span>
               </button>
             </div>
           </form>
