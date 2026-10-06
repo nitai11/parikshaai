@@ -1,0 +1,7 @@
+.git
+node_modules
+.next
+*.zip
+*.pdf
+audit_results/
+screenshots/
