@@ -341,6 +341,9 @@ export default function App() {
           }}
           onGoHome={() => setScreen('home')}
           onOpenFeedback={() => setIsFeedbackOpen(true)}
+          onPracticeMoreSameTopic={(topicName) => {
+            handleStartQuiz(topicName, 10, 'medium');
+          }}
         />
       )}
 

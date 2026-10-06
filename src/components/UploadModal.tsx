@@ -360,7 +360,10 @@ export default function UploadModal({
                 className="w-full text-xs font-semibold rounded-xl border border-gray-200 p-2.5 bg-gray-50 focus:outline-emerald-600"
               >
                 <option value={5}>5 सवाल (क्विक 2-min)</option>
-                <option value={10}>10 सवाल (फुल टेस्ट)</option>
+                <option value={10}>10 सवाल (स्टैंडर्ड टेस्ट)</option>
+                <option value={15}>15 सवाल (गहन अभ्यास - 15 Q)</option>
+                <option value={20}>20 सवाल (फुल चैप्टर टेस्ट - 20 Q)</option>
+                <option value={25}>25 सवाल (महा-अभ्यास - 25 Q)</option>
               </select>
             </div>
             <div>

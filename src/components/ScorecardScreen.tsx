@@ -3,20 +3,22 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { QuizResult } from '@/types/quiz';
-import { Trophy, Flame, Clock, Target, AlertTriangle, Share2, RotateCcw, Home, ArrowLeft } from 'lucide-react';
+import { Trophy, Flame, Clock, Target, AlertTriangle, Share2, RotateCcw, Home, ArrowLeft, Sparkles } from 'lucide-react';
 
 interface ScorecardScreenProps {
   result: QuizResult;
   onNewQuiz: () => void;
   onGoHome: () => void;
   onOpenFeedback?: () => void;
+  onPracticeMoreSameTopic?: (topic: string) => void;
 }
 
 export default function ScorecardScreen({
   result,
   onNewQuiz,
   onGoHome,
-  onOpenFeedback
+  onOpenFeedback,
+  onPracticeMoreSameTopic
 }: ScorecardScreenProps) {
   useEffect(() => {
     // Fire festive celebration confetti
@@ -135,6 +137,17 @@ export default function ScorecardScreen({
           <Share2 className="w-4 h-4" />
           <span>📲 दोस्तों को WhatsApp पर चैलेंज करो (1v1 Battle)</span>
         </button>
+
+        {/* Practice More on Same Topic Button */}
+        {onPracticeMoreSameTopic && (
+          <button
+            onClick={() => onPracticeMoreSameTopic(result.topic)}
+            className="w-full py-3 px-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold rounded-2xl flex items-center justify-center gap-2 transition text-xs shadow-xs"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <span>🔄 इसी टॉपिक ({result.topic}) से 10 और नए सवाल बनाएं</span>
+          </button>
+        )}
 
         {/* Retake and Home Buttons */}
         <div className="grid grid-cols-2 gap-2">
