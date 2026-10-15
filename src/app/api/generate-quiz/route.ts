@@ -4,7 +4,7 @@ import { generateQuizFromAI } from '@/lib/gemini';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { topicOrText, questionCount = 5, difficulty = 'medium', base64Image } = body;
+    const { topicOrText, questionCount = 5, difficulty = 'medium', base64Image, quizTitle } = body;
 
     if (!topicOrText && !base64Image) {
       return NextResponse.json(
@@ -20,11 +20,16 @@ export async function POST(req: NextRequest) {
       base64Image
     );
 
+    let displayTopic = quizTitle || topicOrText || 'Uploaded Notes';
+    if (displayTopic.length > 70) {
+      displayTopic = displayTopic.slice(0, 67) + '...';
+    }
+
     return NextResponse.json({
       success: true,
       quiz: {
         id: `quiz_${Date.now()}`,
-        topic: topicOrText || 'Uploaded Notes',
+        topic: displayTopic,
         questions,
         totalQuestions: questions.length,
         difficulty,

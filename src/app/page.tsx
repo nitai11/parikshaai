@@ -261,7 +261,8 @@ export default function App() {
     topicOrText: string,
     questionCount: number,
     difficulty: string,
-    base64Image?: string
+    base64Image?: string,
+    quizTitle?: string
   ) => {
     // Check free limit
     if (!isPro && freeTestsUsed >= 2) {
@@ -279,7 +280,8 @@ export default function App() {
           topicOrText,
           questionCount,
           difficulty,
-          base64Image
+          base64Image,
+          quizTitle
         })
       });
 

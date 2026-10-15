@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Camera, FileText, X, Sparkles, Loader2, UploadCloud, Mic, MicOff } from 'lucide-react';
+import { Camera, FileText, X, Sparkles, Loader2, UploadCloud, Mic, MicOff, CheckCircle2 } from 'lucide-react';
+import { extractPdfContent } from '@/lib/pdfExtractor';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStartQuiz: (topicOrText: string, count: number, difficulty: string, base64Image?: string) => Promise<void>;
+  onStartQuiz: (
+    topicOrText: string,
+    count: number,
+    difficulty: string,
+    base64Image?: string,
+    quizTitle?: string
+  ) => Promise<void>;
   isLoading: boolean;
   initialTopic?: string;
 }
@@ -43,10 +50,29 @@ export default function UploadModal({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string>('');
   const [isPdfFile, setIsPdfFile] = useState<boolean>(false);
+  const [isExtractingPdf, setIsExtractingPdf] = useState<boolean>(false);
+  const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
+  const [extractedPdfText, setExtractedPdfText] = useState<string | null>(null);
+  const [pdfStats, setPdfStats] = useState<{
+    numPages: number;
+    fileSizeMb: string;
+    isScanned: boolean;
+  } | null>(null);
+
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  const resetUploadState = () => {
+    setSelectedImage(null);
+    setSelectedFileName('');
+    setIsPdfFile(false);
+    setIsExtractingPdf(false);
+    setPdfProgress(null);
+    setExtractedPdfText(null);
+    setPdfStats(null);
+  };
 
   const toggleListening = () => {
     if (isListening) {
@@ -138,21 +164,55 @@ export default function UploadModal({
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
     if (isPdf) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('कृपया 5MB से छोटी PDF फाइल अपलोड करें ताकि AI तुरंत पढ़ सके।');
+      // Allow up to 30MB PDFs
+      if (file.size > 30 * 1024 * 1024) {
+        alert('कृपया 30MB से छोटी PDF फाइल अपलोड करें।');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-        setSelectedFileName(file.name);
-        setIsPdfFile(true);
-        if (!topic.trim()) {
-          const cleanName = file.name.replace(/\.[^/.]+$/, '');
-          setTopic(cleanName ? `${cleanName} (PDF नोट्स)` : 'PDF नोट्स से AI टेस्ट');
+
+      setIsPdfFile(true);
+      setSelectedFileName(file.name);
+      setIsExtractingPdf(true);
+      setPdfProgress({ current: 0, total: 0 });
+      setExtractedPdfText(null);
+      setSelectedImage(null);
+
+      const cleanName = file.name.replace(/\.[^/.]+$/, '');
+      if (!topic.trim()) {
+        setTopic(cleanName ? `${cleanName} (PDF नोट्स)` : 'PDF नोट्स से AI टेस्ट');
+      }
+
+      try {
+        const result = await extractPdfContent(file, 30, (curr, tot) => {
+          setPdfProgress({ current: curr, total: tot });
+        });
+
+        if (!result.success) {
+          alert('PDF पढ़ने में असमर्थ: ' + (result.error || 'कृपया दूसरी फाइल चुनें'));
+          resetUploadState();
+          return;
         }
-      };
-      reader.readAsDataURL(file);
+
+        setPdfStats({
+          numPages: result.numPages,
+          fileSizeMb: (file.size / (1024 * 1024)).toFixed(1),
+          isScanned: result.isScanned
+        });
+
+        if (result.isScanned && result.pageImageBase64) {
+          setSelectedImage(result.pageImageBase64);
+          setExtractedPdfText(null);
+        } else if (result.text) {
+          setSelectedImage(null);
+          setExtractedPdfText(result.text);
+        }
+      } catch (err: any) {
+        console.error('PDF parsing error:', err);
+        alert('PDF पढ़ने में त्रुटि हुई। कृपया पुनः प्रयास करें।');
+        resetUploadState();
+      } finally {
+        setIsExtractingPdf(false);
+      }
       return;
     }
 
@@ -162,6 +222,8 @@ export default function UploadModal({
       setSelectedImage(compressed);
       setSelectedFileName(file.name);
       setIsPdfFile(false);
+      setExtractedPdfText(null);
+      setPdfStats(null);
       if (!topic.trim()) {
         setTopic('फोटो / स्क्रीनशॉट नोट्स');
       }
@@ -172,6 +234,8 @@ export default function UploadModal({
         setSelectedImage(reader.result as string);
         setSelectedFileName(file.name);
         setIsPdfFile(false);
+        setExtractedPdfText(null);
+        setPdfStats(null);
         if (!topic.trim()) {
           setTopic('फोटो / स्क्रीनशॉट नोट्स');
         }
@@ -182,9 +246,27 @@ export default function UploadModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isExtractingPdf) return;
+
+    if (isPdfFile && extractedPdfText) {
+      const cleanTitle = topic.trim() || selectedFileName.replace(/\.[^/.]+$/, '') || 'PDF नोट्स';
+      const pdfHeader = `--- PDF DOCUMENT CONTENT: ${selectedFileName} (${pdfStats?.numPages || 1} Pages) ---\n`;
+      // Send up to 50,000 characters of high-yield extracted text directly
+      const fullText = `${pdfHeader}${extractedPdfText.slice(0, 50000)}`;
+      await onStartQuiz(fullText, questionCount, difficulty, undefined, cleanTitle);
+      return;
+    }
+
+    if (isPdfFile && selectedImage) {
+      // Scanned PDF (single canvas snapshot)
+      const cleanTitle = topic.trim() || selectedFileName.replace(/\.[^/.]+$/, '') || 'स्कैन PDF नोट्स';
+      await onStartQuiz(topic.trim() || 'स्कैन PDF नोट्स', questionCount, difficulty, selectedImage, cleanTitle);
+      return;
+    }
+
     if (!topic.trim() && !selectedImage) return;
-    const finalTopic = topic.trim() || (isPdfFile ? 'PDF नोट्स से AI टेस्ट' : 'स्क्रीनशॉट नोट्स से AI टेस्ट');
-    await onStartQuiz(finalTopic, questionCount, difficulty, selectedImage || undefined);
+    const finalTopic = topic.trim() || 'स्क्रीनशॉट नोट्स से AI टेस्ट';
+    await onStartQuiz(finalTopic, questionCount, difficulty, selectedImage || undefined, finalTopic);
   };
 
   return (
@@ -202,9 +284,14 @@ export default function UploadModal({
             </div>
           </div>
           <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition"
+            onClick={() => {
+              if (!isLoading) {
+                resetUploadState();
+                onClose();
+              }
+            }}
+            disabled={isLoading || isExtractingPdf}
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition disabled:opacity-50"
           >
             <X className="w-4 h-4" />
           </button>
@@ -243,7 +330,7 @@ export default function UploadModal({
               activeTab === 'file' ? 'bg-white text-emerald-700 shadow-xs' : 'text-gray-600'
             }`}
           >
-            📄 PDF / फाइल
+            📄 PDF (30MB)
           </button>
         </div>
 
@@ -265,71 +352,113 @@ export default function UploadModal({
         />
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          {/* Content Input or Preview */}
-          {selectedImage ? (
-            isPdfFile ? (
-              <div className="relative rounded-2xl border border-red-200 bg-red-50/40 p-4">
-                <div className="flex items-center justify-between text-xs font-semibold text-red-800 mb-2">
-                  <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    PDF डॉक्यूमेंट सेलेक्ट हो गया
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedImage(null);
-                      setSelectedFileName('');
-                      setIsPdfFile(false);
-                    }}
-                    className="text-red-500 hover:text-red-700 font-medium text-xs hover:underline"
-                  >
-                    हटाएं (Remove)
-                  </button>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-red-100 shadow-xs">
-                  <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-gray-900 truncate">
-                      {selectedFileName || 'PDF Document'}
-                    </p>
-                    <p className="text-[11px] text-emerald-600 font-medium">
-                      ✓ AI इस PDF के अध्यायों से सीधे सवाल बनाएगा
-                    </p>
-                  </div>
+          {/* PDF Extracting Progress Indicator */}
+          {isExtractingPdf && (
+            <div className="relative rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 animate-in fade-in duration-200">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-6 h-6 text-indigo-600 animate-spin shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-gray-900 truncate">
+                    📄 PDF विश्लेषित की जा रही है... (30MB तक सपोर्टेड)
+                  </p>
+                  <p className="text-[11px] text-indigo-700 font-medium mt-0.5">
+                    {pdfProgress && pdfProgress.total > 0
+                      ? `पेज ${pdfProgress.current} / ${pdfProgress.total} पढ़े जा रहे हैं...`
+                      : 'डॉक्यूमेंट लोड हो रहा है...'}
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="relative rounded-2xl overflow-hidden border border-emerald-200 bg-emerald-50/50 p-3">
-                <div className="flex items-center justify-between text-xs font-semibold text-emerald-800 mb-2">
-                  <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    फोटो / स्क्रीनशॉट नोट्स सेलेक्ट हो गया
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedImage(null);
-                      setSelectedFileName('');
-                      setIsPdfFile(false);
+              {pdfProgress && pdfProgress.total > 0 && (
+                <div className="w-full bg-indigo-200 rounded-full h-2 mt-3 overflow-hidden">
+                  <div
+                    className="bg-indigo-600 h-2 rounded-full transition-all duration-200"
+                    style={{
+                      width: `${Math.max(5, Math.round((pdfProgress.current / pdfProgress.total) * 100))}%`
                     }}
-                    className="text-red-500 hover:text-red-700 font-medium text-xs hover:underline"
-                  >
-                    हटाएं (Remove)
-                  </button>
+                  />
                 </div>
-                <img
-                  src={selectedImage}
-                  alt="Selected notes preview"
-                  className="max-h-48 w-full object-contain rounded-xl border border-emerald-100 bg-white"
-                />
-                <p className="text-[11px] text-emerald-700 font-medium mt-2 text-center">
-                  ✓ AI इस फोटो / स्क्रीनशॉट नोट्स को पढ़कर सीधे सवाल बनाएगा
-                </p>
+              )}
+            </div>
+          )}
+
+          {/* PDF Loaded State */}
+          {!isExtractingPdf && isPdfFile && (extractedPdfText || selectedImage) && (
+            <div className="relative rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs font-semibold text-emerald-800 mb-2">
+                <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  PDF सफलतापूर्वक लोड हो गई (30MB समर्थित)
+                </span>
+                <button
+                  type="button"
+                  onClick={resetUploadState}
+                  className="text-red-500 hover:text-red-700 font-semibold text-xs hover:underline"
+                >
+                  हटाएं (Remove)
+                </button>
               </div>
-            )
-          ) : (
+              <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-emerald-100 shadow-xs">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-gray-900 truncate">
+                    {selectedFileName || 'PDF Document'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {pdfStats?.fileSizeMb && (
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        {pdfStats.fileSizeMb} MB
+                      </span>
+                    )}
+                    {pdfStats?.numPages ? (
+                      <span className="text-[11px] text-gray-600 font-medium">
+                        कुल {pdfStats.numPages} पेज
+                      </span>
+                    ) : null}
+                    {pdfStats?.isScanned && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px]">
+                        स्कैन प्रति
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-emerald-600 font-medium mt-1">
+                    ✓ AI इस PDF सामग्री से सीधे प्रामाणिक सवाल तैयार करेगा
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image / Photo Selected State */}
+          {!isExtractingPdf && !isPdfFile && selectedImage && (
+            <div className="relative rounded-2xl overflow-hidden border border-emerald-200 bg-emerald-50/50 p-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs font-semibold text-emerald-800 mb-2">
+                <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  फोटो / स्क्रीनशॉट नोट्स सेलेक्ट हो गया
+                </span>
+                <button
+                  type="button"
+                  onClick={resetUploadState}
+                  className="text-red-500 hover:text-red-700 font-semibold text-xs hover:underline"
+                >
+                  हटाएं (Remove)
+                </button>
+              </div>
+              <img
+                src={selectedImage}
+                alt="Selected notes preview"
+                className="max-h-48 w-full object-contain rounded-xl border border-emerald-100 bg-white"
+              />
+              <p className="text-[11px] text-emerald-700 font-medium mt-2 text-center">
+                ✓ AI इस फोटो / स्क्रीनशॉट नोट्स को पढ़कर सीधे सवाल बनाएगा
+              </p>
+            </div>
+          )}
+
+          {/* Standard Input when no file selected */}
+          {!selectedImage && !isPdfFile && !isExtractingPdf && (
             <div className="space-y-2.5">
               {/* Quick Exam Selection Chips */}
               <div>
@@ -391,6 +520,30 @@ export default function UploadModal({
                 />
               </div>
 
+              {/* PDF & Material Capacity Highlight Banner */}
+              <div className="p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                    <UploadCloud className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-blue-950">
+                      25MB - 30MB तक PDF बुक्स व नोट्स अपलोड करें
+                    </p>
+                    <p className="text-[10px] text-blue-700">
+                      कोचिंग बुक्स, क्लासरूम नोट्स व PYQs तुरंत टेस्ट में बदलें
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-[11px] font-bold px-2.5 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shrink-0"
+                >
+                  फाइल चुनें
+                </button>
+              </div>
+
               {/* Popular Suggestions */}
               <div className="flex flex-wrap gap-1">
                 {POPULAR_SUGGESTIONS.map((sug, idx) => (
@@ -448,13 +601,22 @@ export default function UploadModal({
           {/* Submit Action Button */}
           <button
             type="submit"
-            disabled={isLoading || (!topic.trim() && !selectedImage)}
+            disabled={
+              isLoading ||
+              isExtractingPdf ||
+              (!topic.trim() && !selectedImage && !extractedPdfText)
+            }
             className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-indigo-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-600/20 hover:opacity-95 transition flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>AI टेस्ट बना रहा है... (3 sec)</span>
+              </>
+            ) : isExtractingPdf ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>PDF पढ़ी जा रही है...</span>
               </>
             ) : (
               <>

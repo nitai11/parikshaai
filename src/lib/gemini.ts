@@ -92,11 +92,20 @@ export async function generateQuizFromAI(
   try {
     const ai = new GoogleGenAI({ apiKey });
     
+    const isExtractedPdf = Boolean(topicOrText && (topicOrText.includes('--- [Page') || topicOrText.includes('PDF DOCUMENT CONTENT')));
     const isPdf = Boolean(base64Image && (base64Image.startsWith('data:application/pdf') || base64Image.includes('application/pdf')));
     const isImage = Boolean(base64Image && !isPdf);
 
     let taskInstruction = `Generate exactly ${questionCount} multiple choice questions (MCQs) for the topic or notes provided: "${topicOrText}".`;
-    if (isPdf) {
+    if (isExtractedPdf) {
+      taskInstruction = `TASK: You are given extracted text from an uploaded PDF study material/book notes (up to 30MB supported).
+Carefully read and analyze all sections, pages, formulas, facts, and concepts in this extracted PDF document text:
+
+${topicOrText}
+
+Generate exactly ${questionCount} multiple choice questions (MCQs) STRICTLY AND DIRECTLY BASED on the content of this PDF document.
+Every question must test real concepts present in this text. Do not invent unrelated questions outside this document.`;
+    } else if (isPdf) {
       taskInstruction = `TASK: You are given an uploaded PDF study material/notes. Carefully read and analyze all pages, text, formulas, facts, and topics inside this PDF document.
 Generate exactly ${questionCount} multiple choice questions (MCQs) STRICTLY AND DIRECTLY BASED on the content of this PDF document.
 ${topicOrText ? `Optional user focus hint: "${topicOrText}".` : ''}
