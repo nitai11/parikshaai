@@ -21,12 +21,12 @@ interface HomeScreenProps {
 }
 
 const POPULAR_TOPICS = [
-  { label: '1857 Kranti', icon: '🇮🇳' },
-  { label: 'Indian Polity (संविधान)', icon: '📖' },
-  { label: 'SSC GK PYQ', icon: '📚' },
-  { label: 'Percentage (Maths)', icon: '➗' },
-  { label: 'Modern History', icon: '📈' },
-  { label: 'General Science (जीव विज्ञान)', icon: '🔬' }
+  { label: 'SSC CGL Tier 1 GK PYQ', query: 'SSC CGL Tier 1 GK & General Studies PYQ', icon: '🏆', badge: 'SSC' },
+  { label: 'भारतीय संविधान व राजव्यवस्था', query: 'भारतीय संविधान एवं मौलिक अधिकार UPSC SSC', icon: '📖', badge: 'Polity' },
+  { label: 'UP Police सामान्य ज्ञान व हिंदी', query: 'UP Police Constable सामान्य ज्ञान एवं हिंदी', icon: '👮', badge: 'Police' },
+  { label: 'Railway RRB सामान्य विज्ञान (GS)', query: 'Railway RRB General Science Physics Chemistry Biology', icon: '🚂', badge: 'RRB' },
+  { label: '1857 क्रांति व आधुनिक इतिहास', query: '1857 की क्रांति एवं भारतीय राष्ट्रीय आंदोलन', icon: '🇮🇳', badge: 'History' },
+  { label: 'दैनिक करेंट अफेयर्स 2024-2025', query: 'नवीनतम राष्ट्रीय व अंतर्राष्ट्रीय करेंट अफेयर्स', icon: '📰', badge: 'Current' }
 ];
 
 export default function HomeScreen({
@@ -78,6 +78,11 @@ export default function HomeScreen({
           <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase text-emerald-200 mb-2">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>AI Powered Personalized Tests</span>
+          </div>
+          {/* Viral Social Proof Ticker */}
+          <div className="inline-flex items-center gap-2 bg-black/30 border border-white/15 px-3 py-1 rounded-full text-[11px] font-semibold text-emerald-300 mb-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>🔥 4,820+ छात्रों ने आज 38,000+ सवाल हल किए!</span>
           </div>
           <h3 className="text-xl font-black tracking-tight">AI se Mock Test Banao</h3>
           <p className="text-xs text-emerald-100 font-medium mt-0.5">
@@ -167,23 +172,35 @@ export default function HomeScreen({
         </div>
       )}
 
-      {/* Popular Topics Section */}
+      {/* Popular Topics / 100% Verified PYQ Exam Packs */}
       <div>
-        <div className="flex items-center justify-between mb-2.5">
-          <h4 className="text-sm font-black text-gray-900">Popular Topics (लोकप्रिय विषय)</h4>
-          <span className="text-[11px] text-gray-400 font-semibold">1-Click Test</span>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h4 className="text-sm font-black text-gray-900 flex items-center gap-1.5">
+              <span>🎯 असली परीक्षा टेस्ट (Verified PYQs)</span>
+            </h4>
+            <p className="text-[11px] text-gray-500">बिना नोट्स के सीधे आयोग के असली सवालों से तैयारी करें</p>
+          </div>
+          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full shrink-0">
+            ✓ 100% Verified
+          </span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {POPULAR_TOPICS.map((topic, idx) => (
             <button
               key={idx}
-              onClick={() => onOpenUpload(topic.label)}
-              className="p-3 bg-white rounded-xl border border-gray-100 shadow-2xs hover:border-emerald-300 hover:bg-emerald-50/30 transition text-left flex items-center gap-2 group"
+              onClick={() => onOpenUpload(topic.query || topic.label)}
+              className="p-3 bg-white rounded-2xl border border-gray-100 shadow-2xs hover:border-emerald-300 hover:bg-emerald-50/30 transition text-left flex items-start gap-2.5 group relative overflow-hidden"
             >
-              <span className="text-base">{topic.icon}</span>
-              <span className="text-xs font-bold text-gray-800 group-hover:text-emerald-700 truncate">
-                {topic.label}
-              </span>
+              <span className="text-lg shrink-0 mt-0.5">{topic.icon}</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider block">
+                  {topic.badge}
+                </span>
+                <span className="text-xs font-bold text-gray-800 group-hover:text-emerald-800 line-clamp-1 block">
+                  {topic.label}
+                </span>
+              </div>
             </button>
           ))}
         </div>

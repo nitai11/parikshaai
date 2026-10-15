@@ -106,33 +106,45 @@ Do not invent unrelated questions outside this document.`;
 Generate exactly ${questionCount} multiple choice questions (MCQs) STRICTLY AND DIRECTLY BASED on the information written in this image/screenshot.
 ${topicOrText ? `Optional user focus hint: "${topicOrText}".` : ''}
 Do not invent questions outside what is visible in this image.`;
+    } else {
+      taskInstruction = `TASK: The student wants to prepare for the competitive exam / topic: "${topicOrText}".
+The student DOES NOT have study material or notes with them. You must act as the Official Examination Board & Fact Verification Council (UPSC, SSC, NTA, Railway RRB, State PCS, NCERT).
+
+CRITICAL AUTHENTICITY & ZERO-FAKE-DATA RULES:
+1. 100% FACTUAL & VERIFIED ONLY: Every question, option, answer, and explanation MUST be 100% verified against standard government curriculum, official Constitution of India, NCERT textbooks, or official previous year questions (PYQs).
+2. ABSOLUTELY ZERO HALLUCINATIONS: Never fabricate fake dates, non-existent article numbers, incorrect formulas, or imaginary history. Students' lives, careers, and national exams depend on 100% accurate truth.
+3. OFFICIAL EXAM RELEVANCE: Focus strictly on high-yield, repeated exam concepts that actually appear in competitive exams for "${topicOrText}".
+4. FACT-CHECKED EXPLANATION: Clearly explain the authentic rule, historical treaty, article number, or scientific formula so the student learns the concept with complete trust.`;
     }
 
-    const prompt = `You are ParikshaAI, an expert Indian competitive exam mentor (SSC CGL, UPSC, Railway, State PCS).
+    const prompt = `You are ParikshaAI, an expert Indian competitive exam mentor (SSC CGL, UPSC, Railway, State PCS, NEET).
 ${taskInstruction}
 Difficulty Level: ${difficulty}.
 
 CRITICAL REQUIREMENTS:
-1. Every question MUST directly test what is provided in the material. Do not invent unrelated topics.
+1. Every question MUST be authentic, fact-checked, and relevant to the exam/topic.
 2. Every question MUST be bilingual: Hindi first, followed by clear English translation.
-3. Provide exactly 4 distinct options in the "options" array.
+3. Provide exactly 4 distinct, plausible options in the "options" array.
 4. "correctAnswer" MUST BE A ZERO-BASED INTEGER INDEX (0 for 1st option, 1 for 2nd option, 2 for 3rd option, 3 for 4th option). DO NOT output string text for correctAnswer.
-5. Provide a clear, friendly explanation in both Hindi and English based on the material content.
+5. Provide a clear, educational explanation in both Hindi and English with authentic facts and references.
 6. Return ONLY a valid JSON array matching this exact schema:
 
 [
   {
     "id": 1,
-    "questionHi": "दिए गए दस्तावेज़ / इमेज के आधार पर प्रश्न",
-    "questionEn": "Question in English based on material",
+    "questionHi": "प्रामाणिक प्रश्न हिंदी में",
+    "questionEn": "Verified question in English",
     "options": ["Option A", "Option B", "Option C", "Option D"],
     "correctAnswer": 0,
-    "explanationHi": "हिंदी में आसान भाषा में समाधान",
-    "explanationEn": "Clear explanation in English"
+    "explanationHi": "सत्यापित समाधान हिंदी में (तथ्य, अनुच्छेद या नियम के साथ)",
+    "explanationEn": "Verified explanation in English"
   }
 ]`;
 
     let response;
+    const primaryModel = 'gemini-3.5-flash-lite';
+    const fallbackModel = 'gemini-2.5-flash';
+
     if (base64Image) {
       let mimeType = 'image/jpeg';
       if (isPdf) {
@@ -143,11 +155,8 @@ CRITICAL REQUIREMENTS:
         mimeType = 'image/webp';
       }
       
-      // Clean prefix for any mime type: data:image/png;base64,... or data:application/pdf;base64,...
       const cleanBase64 = base64Image.replace(/^data:[^;]+;base64,/, '').trim();
-      
-      response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+      const payload = {
         contents: [
           {
             role: 'user',
@@ -162,12 +171,33 @@ CRITICAL REQUIREMENTS:
             ]
           }
         ]
-      });
+      };
+
+      try {
+        response = await ai.models.generateContent({
+          model: primaryModel,
+          ...payload
+        });
+      } catch (err: any) {
+        console.warn(`Primary model ${primaryModel} failed, trying fallback ${fallbackModel}:`, err.message || err);
+        response = await ai.models.generateContent({
+          model: fallbackModel,
+          ...payload
+        });
+      }
     } else {
-      response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
-      });
+      try {
+        response = await ai.models.generateContent({
+          model: primaryModel,
+          contents: prompt
+        });
+      } catch (err: any) {
+        console.warn(`Primary model ${primaryModel} failed, trying fallback ${fallbackModel}:`, err.message || err);
+        response = await ai.models.generateContent({
+          model: fallbackModel,
+          contents: prompt
+        });
+      }
     }
 
     const text = response.text || '';

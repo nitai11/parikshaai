@@ -35,7 +35,7 @@ export default function ScorecardScreen({
 
   const shareToWhatsApp = () => {
     const liveUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pariksha.nitaiitsolution.in';
-    const shareText = `🎯 मैंने ParikshaAI पर "${result.topic}" टेस्ट में ${result.totalQuestions} में से ${result.correctAnswers} अंक हासिल किए! (${result.scorePercentage}% स्कोर)\n\n⚡ दम है तो मुझे खेलकर हराकर दिखाओ! यहाँ टेस्ट दो: ${liveUrl}\n#ParikshaAI #ExamPrep`;
+    const shareText = `🔥 *CHALLENGE ALERT on ParikshaAI!* 🔥\n\nमैंने अभी *"${result.topic}"* AI मॉक टेस्ट में ${result.totalQuestions} में से *${result.correctAnswers} अंक* हासिल किए! (${result.scorePercentage}% स्कोर 🎯)\n\n⚡ *दम है तो मुझे इस टेस्ट में हराकर दिखाओ!* ⚡\n👉 बिना किसी ऐप के तुरंत टेस्ट खेलो: ${liveUrl}\n\n(AI से अपनी All-India रैंक और गलतियों का एनालिसिस तुरंत फ्री में चेक करें! 🚀)`;
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
     window.open(whatsappUrl, '_blank');
   };

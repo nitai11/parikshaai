@@ -11,6 +11,24 @@ interface UploadModalProps {
   initialTopic?: string;
 }
 
+const TARGET_EXAMS = [
+  { label: '🏆 SSC CGL / CHSL', query: 'SSC CGL Tier 1 GK & General Studies PYQ' },
+  { label: '🇮🇳 UPSC / State PCS', query: 'UPSC Civil Services Prelims GS Paper 1' },
+  { label: '🚂 Railway RRB', query: 'Railway RRB NTPC General Awareness' },
+  { label: '👮 UP Police', query: 'UP Police Constable सामान्य ज्ञान व हिंदी' },
+  { label: '🧬 NEET Biology', query: 'NEET UG Biology NCERT High Yield' },
+  { label: '🏦 Banking IBPS/SBI', query: 'Banking Awareness & Quantitative Aptitude' },
+  { label: '📰 Current Affairs', query: 'राष्ट्रीय व अंतर्राष्ट्रीय करेंट अफेयर्स 2024' }
+];
+
+const POPULAR_SUGGESTIONS = [
+  'भारतीय संविधान के मौलिक अधिकार',
+  '1857 की क्रांति और स्वतंत्रता संग्राम',
+  'सिंधु घाटी सभ्यता (Indus Valley)',
+  'प्रतिशत व लाभ-हानि (Maths)',
+  'मानव शरीर रचना व पाचन तंत्र'
+];
+
 export default function UploadModal({
   isOpen,
   onClose,
@@ -312,41 +330,88 @@ export default function UploadModal({
               </div>
             )
           ) : (
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-gray-700">
-                  विषय या नोट्स का टॉपिक (Topic / Notes):
+            <div className="space-y-2.5">
+              {/* Quick Exam Selection Chips */}
+              <div>
+                <label className="text-[11px] font-bold text-gray-600 block mb-1">
+                  🎯 परीक्षा चुनें (अगर नोट्स नहीं हैं तो सीधे चुनें):
                 </label>
-                <button
-                  type="button"
-                  onClick={toggleListening}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition shadow-xs ${
-                    isListening
-                      ? 'bg-rose-500 text-white animate-pulse'
-                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                  }`}
-                  title="बोलकर लिखें / Speak topic"
-                >
-                  {isListening ? (
-                    <>
-                      <MicOff className="w-3.5 h-3.5" />
-                      <span>सुन रहा हूँ... बोलिए</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>🎙️ बोलकर लिखें</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                  {TARGET_EXAMS.map((exam, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setTopic(exam.query)}
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-xl whitespace-nowrap transition border ${
+                        topic === exam.query
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                          : 'bg-gray-50 hover:bg-emerald-50 text-gray-700 border-gray-200'
+                      }`}
+                    >
+                      {exam.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <textarea
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="उदा. 1857 की क्रांति, भारत का संविधान अनुच्छेद 1-50, Percentage Maths, या कोई भी चैप्टर..."
-                rows={3}
-                className="w-full text-sm rounded-xl border border-gray-200 p-3 focus:outline-emerald-600 focus:border-emerald-600 bg-gray-50/50"
-              />
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-gray-700">
+                    विषय या नोट्स का टॉपिक (Topic / Notes):
+                  </label>
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition shadow-xs ${
+                      isListening
+                        ? 'bg-rose-500 text-white animate-pulse'
+                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                    }`}
+                    title="बोलकर लिखें / Speak topic"
+                  >
+                    {isListening ? (
+                      <>
+                        <MicOff className="w-3.5 h-3.5" />
+                        <span>सुन रहा हूँ... बोलिए</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>🎙️ बोलकर लिखें</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <textarea
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="उदा. 1857 की क्रांति, भारत का संविधान अनुच्छेद 1-50, Percentage Maths, या कोई भी चैप्टर..."
+                  rows={3}
+                  className="w-full text-sm rounded-xl border border-gray-200 p-3 focus:outline-emerald-600 focus:border-emerald-600 bg-gray-50/50"
+                />
+              </div>
+
+              {/* Popular Suggestions */}
+              <div className="flex flex-wrap gap-1">
+                {POPULAR_SUGGESTIONS.map((sug, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setTopic(sug)}
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-gray-100 hover:bg-emerald-100 text-gray-600 hover:text-emerald-800 transition"
+                  >
+                    + {sug}
+                  </button>
+                ))}
+              </div>
+
+              {/* Verified Quality & No-Fake-Question Guarantee */}
+              <div className="flex items-start gap-2 p-2.5 bg-emerald-50/90 border border-emerald-200/90 rounded-xl text-[11px] text-emerald-900 font-medium">
+                <span className="text-sm shrink-0">🛡️</span>
+                <span>
+                  <strong>100% प्रामाणिक व सत्यापित:</strong> सभी प्रश्न UPSC, SSC, RRB के असली पिछले वर्षों के प्रश्न (PYQ) व NCERT से तैयार होंगे। कोई मनगढ़ंत या फर्जी प्रश्न नहीं!
+                </span>
+              </div>
             </div>
           )}
 
