@@ -1,0 +1,2 @@
+# Google AdSense ads.txt - Official Publisher Verification
+google.com, pub-7713903753875440, DIRECT, f08c47fec0942fa0

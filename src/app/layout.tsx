@@ -52,6 +52,14 @@ export default function RootLayout({
         <Analytics />
         <SpeedInsights />
 
+        {/* 💰 Google AdSense Auto Ads Verification */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7713903753875440"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         {/* 📈 Google Analytics 4 (Optional: activates if NEXT_PUBLIC_GA_ID is set) */}
         {gaId && (
           <>
